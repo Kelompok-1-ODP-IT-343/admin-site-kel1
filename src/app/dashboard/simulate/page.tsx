@@ -1,12 +1,11 @@
-'use client';
-
+"use client";
 
 import React, { JSX, useMemo, useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { Check, X, Calculator, FileDown, Settings2, Info } from "lucide-react";
-import { useRouter } from 'next/navigation';
+import { Check, X, Calculator, FileDown, Settings2, Info, XCircle, Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 // ----- Types -----
 type Scheme = "flat-floating" | "all-flat" | "all-float";
@@ -19,40 +18,48 @@ type Row = {
   rateApplied: number;
 };
 
+// tambahan type baru
+type RateSegment = {
+  start: number;
+  end: number;
+  rate: number;
+};
+
 // ----- Component -----
 export default function ApprovalDetailMockup(): JSX.Element {
-  // Router for navigation
   const router = useRouter();
-  
-  // State (typed)
+
   const [loanAmount, setLoanAmount] = useState<number>(850_000_000);
   const [tenor, setTenor] = useState<number>(240);
   const [startFloatAt, setStartFloatAt] = useState<number>(13);
   const [flatRate, setFlatRate] = useState<number>(5.99);
   const [floatRate, setFloatRate] = useState<number>(13.5);
   const [scheme, setScheme] = useState<Scheme>("flat-floating");
-
   const [page, setPage] = useState<number>(1);
   const pageSize = 12;
 
-  // Theme
+  // ---- fitur baru: multi rate adjustment ----
+  const [rateSegments, setRateSegments] = useState<RateSegment[]>([
+    { start: 1, end: 12, rate: 5.99 },
+    { start: 13, end: 240, rate: 13.5 },
+  ]);
+  // --------------------------------------------
+
   const colors = {
     blue: "#3FD8D4",
     gray: "#757575",
     orange: "#FF8500",
-    lime: "#DDEE59",
   } as const;
 
-  // Utils
   function roundIDR(n: number): number {
     return Math.round(n);
   }
 
-  // ----- Calculators (typed params) -----
+  // Schedule builders
   function buildFlatSchedule(P: number, months: number, rateAnnual: number): Row[] {
     const rMonthly = rateAnnual / 100 / 12;
     const principalPart = P / months;
-    const interestPart = P * rMonthly; // flat interest on original principal
+    const interestPart = P * rMonthly;
     let balance = P;
     const rows: Row[] = [];
     for (let m = 1; m <= months; m++) {
@@ -99,11 +106,30 @@ export default function ApprovalDetailMockup(): JSX.Element {
     return rows;
   }
 
+  // fungsi baru: bangun jadwal berdasarkan segmen rate
+  function buildMultiSegmentSchedule(): Row[] {
+    let balance = loanAmount;
+    const all: Row[] = [];
+
+    rateSegments.forEach((seg) => {
+      const months = seg.end - seg.start + 1;
+      const segRows = buildAnnuitySchedule(balance, months, seg.rate, seg.start);
+      balance = segRows[segRows.length - 1]?.balance ?? balance;
+      all.push(...segRows);
+    });
+
+    return all;
+  }
+
   function buildHybridSchedule(): Row[] {
+    // kalau pakai fitur multi-rate, override
+    if (rateSegments.length > 1) {
+      return buildMultiSegmentSchedule();
+    }
+
     if (scheme === "all-flat") return buildFlatSchedule(loanAmount, tenor, flatRate);
     if (scheme === "all-float") return buildAnnuitySchedule(loanAmount, tenor, floatRate, 1);
 
-    // flat promo then floating (re-amortized)
     const flatMonths = Math.max(1, Math.min(startFloatAt - 1, tenor - 1));
     const flatRows = buildFlatSchedule(loanAmount, flatMonths, flatRate);
     const balanceAfterFlat = flatRows[flatRows.length - 1]?.balance ?? loanAmount;
@@ -113,45 +139,54 @@ export default function ApprovalDetailMockup(): JSX.Element {
   }
 
   const rows: Row[] = useMemo<Row[]>(() => buildHybridSchedule(), [
-    loanAmount, tenor, startFloatAt, flatRate, floatRate, scheme,
+    loanAmount, tenor, startFloatAt, flatRate, floatRate, scheme, rateSegments,
   ]);
 
-  const totalPayment: number = useMemo(
-    () => rows.reduce((s, r) => s + r.payment, 0),
-    [rows]
-  );
-  const totalInterest: number = useMemo(
-    () => rows.reduce((s, r) => s + r.interestComponent, 0),
-    [rows]
-  );
+  const totalPayment = useMemo(() => rows.reduce((s, r) => s + r.payment, 0), [rows]);
+  const totalInterest = useMemo(() => rows.reduce((s, r) => s + r.interestComponent, 0), [rows]);
+  const paged = rows.slice((page - 1) * pageSize, page * pageSize);
+  const maxPage = Math.ceil(rows.length / pageSize);
 
-  const paged: Row[] = rows.slice((page - 1) * pageSize, page * pageSize);
-  const maxPage: number = Math.ceil(rows.length / pageSize);
-
-  // Chart data (typed)
-  const chartData: Array<{ month: number; payment: number }> = rows.map((r) => ({
+  const chartData = rows.map((r) => ({
     month: r.month,
     payment: Math.round(r.payment),
   }));
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#fefefe", color: colors.gray }}>
+    <div className="min-h-screen bg-white text-gray-700 relative">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b" style={{ borderColor: colors.blue, background: "white" }}>
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
+      <header
+        className="sticky top-0 z-10 border-b bg-white"
+        style={{ borderColor: colors.blue }}
+      >
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4 relative">
           <div className="flex items-center gap-3">
-            <div style={{ background: colors.blue }} className="h-9 w-9 rounded-xl text-white grid place-content-center font-bold">
+            <div
+              style={{ background: colors.blue }}
+              className="h-9 w-9 rounded-xl text-white grid place-content-center font-bold"
+            >
               SA
             </div>
             <div>
-              <h1 className="font-semibold text-lg text-black">Approval – Detail Pengajuan</h1>
+              <h1 className="font-semibold text-lg text-black">
+                Approval – Detail Pengajuan
+              </h1>
               <p className="text-xs">Satu Atap Admin • Simulasi Suku Bunga</p>
             </div>
           </div>
+
           <div className="flex items-center gap-2 text-xs">
             <Info className="h-4 w-4" color={colors.blue} />
             <span>Audit trail aktif</span>
           </div>
+
+          {/* Tombol Close di pojok kanan atas */}
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="absolute right-6 top-4 flex items-center gap-1 text-sm text-gray-600 hover:text-red-500 transition"
+          >
+            <XCircle className="h-5 w-5" /> Close
+          </button>
         </div>
       </header>
 
@@ -183,6 +218,71 @@ export default function ApprovalDetailMockup(): JSX.Element {
               <Settings2 className="h-5 w-5" color={colors.blue} />
               <h2 className="font-semibold text-black text-base">Pengaturan Bunga</h2>
             </div>
+
+            {/* --- tambahan: multi-rate adjustment UI --- */}
+            <div className="mb-4 border rounded-lg p-3" style={{ borderColor: colors.gray + "33" }}>
+              <p className="text-sm font-medium mb-2">Penyesuaian Multi-Rate</p>
+              {rateSegments.map((seg, idx) => (
+                <div key={idx} className="grid grid-cols-4 gap-2 mb-2 items-end">
+                  <label className="text-xs">
+                    Mulai
+                    <input
+                      type="number"
+                      className="w-full border rounded px-2 py-1 mt-1"
+                      value={seg.start}
+                      onChange={(e) => {
+                        const arr = [...rateSegments];
+                        arr[idx].start = parseInt(e.target.value);
+                        setRateSegments(arr);
+                      }}
+                    />
+                  </label>
+                  <label className="text-xs">
+                    Selesai
+                    <input
+                      type="number"
+                      className="w-full border rounded px-2 py-1 mt-1"
+                      value={seg.end}
+                      onChange={(e) => {
+                        const arr = [...rateSegments];
+                        arr[idx].end = parseInt(e.target.value);
+                        setRateSegments(arr);
+                      }}
+                    />
+                  </label>
+                  <label className="text-xs">
+                    Rate (%)
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-full border rounded px-2 py-1 mt-1"
+                      value={seg.rate}
+                      onChange={(e) => {
+                        const arr = [...rateSegments];
+                        arr[idx].rate = parseFloat(e.target.value);
+                        setRateSegments(arr);
+                      }}
+                    />
+                  </label>
+                  <button
+                    onClick={() => setRateSegments(rateSegments.filter((_, i) => i !== idx))}
+                    className="text-red-500 hover:text-red-600 flex items-center gap-1 justify-center"
+                  >
+                    <Trash2 className="h-4 w-4" /> Hapus
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() =>
+                  setRateSegments([...rateSegments, { start: tenor - 11, end: tenor, rate: floatRate }])
+                }
+                className="mt-2 flex items-center gap-2 text-sm border rounded-lg px-3 py-1"
+                style={{ borderColor: colors.blue, color: colors.blue }}
+              >
+                <Plus className="h-4 w-4" /> Tambah Segmen
+              </button>
+            </div>
+            {/* --- end multi-rate UI --- */}
 
             <div className="grid grid-cols-3 gap-2 mb-4">
               {(["flat-floating", "all-flat", "all-float"] as Scheme[]).map((opt) => (
@@ -298,7 +398,6 @@ export default function ApprovalDetailMockup(): JSX.Element {
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.gray + "55"} />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke={colors.gray} />
                   <YAxis tick={{ fontSize: 12 }} stroke={colors.gray} />
-                  {/* Tooltip formatter typed to avoid implicit any */}
                   <Tooltip formatter={(v: number | string) => `Rp${Number(v).toLocaleString("id-ID")}`} />
                   <Line type="monotone" dataKey="payment" stroke={colors.blue} strokeWidth={2} dot={false} />
                 </LineChart>
