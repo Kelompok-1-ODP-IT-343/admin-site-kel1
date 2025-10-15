@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function ConfirmPage() {
+function ConfirmContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const action = searchParams.get('action') || 'approve';
@@ -81,5 +81,14 @@ export default function ConfirmPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmPage() {
+  // Wrap penggunaan useSearchParams di dalam Suspense agar sesuai aturan Next
+  return (
+    <Suspense fallback={<></>}>
+      <ConfirmContent />
+    </Suspense>
   );
 }
