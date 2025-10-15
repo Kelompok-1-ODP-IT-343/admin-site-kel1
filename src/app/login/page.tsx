@@ -1,12 +1,20 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { loginBlueprint } from '@/services/auth';
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const handleDemoLogin = () => {
-    router.push('/dashboard');
+  const handleDemoLogin = async () => {
+    // Tanpa mengubah UI, gunakan blueprint login dan lanjut ke dashboard
+    const result = await loginBlueprint({ username: 'admin', password: 'admin' });
+    if (result.success) {
+      router.push('/dashboard');
+    } else {
+      // tidak mengubah UI; jika gagal cukup log error
+      console.error('Login gagal:', result.message);
+    }
   };
 
   return (
