@@ -27,44 +27,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, ChevronDown } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import type { Property } from "@/components/dialogs/PropertyDetailsDialog"
+import { properties, Property } from "@/components/data/properties"
 
 // lazy load dialog biar ga render berat
 const PropertyDetailsDialog = React.lazy(
   () => import("@/components/dialogs/PropertyDetailsDialog")
 )
-
-const properties: Property[] = [
-  {
-    id: "1",
-    namaProperti: "Ciputra Residence BSD Cluster Aster",
-    developer: "Ciputra Group",
-    alamat: "Jl. BSD Raya Utama No. 5, Tangerang Selatan",
-    harga: 850_000_000,
-    luasTanah: 72,
-    luasBangunan: 90,
-    kamarTidur: 3,
-    kamarMandi: 2,
-    kondisi: "Baru",
-    tahunBangun: "2024",
-    imageUrl: "/images/rumah1.jpg",
-  },
-  {
-    id: "2",
-    namaProperti: "Summarecon Serpong Cluster Elora",
-    developer: "Summarecon",
-    alamat: "Jl. Gading Serpong Boulevard No. 3, Tangerang",
-    harga: 1_200_000_000,
-    luasTanah: 84,
-    luasBangunan: 110,
-    kamarTidur: 4,
-    kamarMandi: 3,
-    kondisi: "Dalam Pembangunan",
-    tahunBangun: "2025",
-    imageUrl: "/images/rumah2.jpg",
-  },
-  // Tambah data dummy lain jika mau (tapi batasi max 10)
-]
 
 export default function PropertiesList() {
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -72,10 +40,10 @@ export default function PropertiesList() {
   const [selectedProperty, setSelectedProperty] = React.useState<Property | null>(null)
   const [showDialog, setShowDialog] = React.useState(false)
 
-  // Batasi render hanya 10 data biar ringan
+  // filter berdasarkan title
   const filteredData = React.useMemo(() => {
     const data = properties.filter((p) =>
-      p.namaProperti.toLowerCase().includes(filter.toLowerCase())
+      p.title.toLowerCase().includes(filter.toLowerCase())
     )
     return data.slice(0, 10)
   }, [filter])
@@ -89,28 +57,36 @@ export default function PropertiesList() {
     console.log("Delete:", property.id)
   }
 
+
   const columns: ColumnDef<Property>[] = [
     {
-      accessorKey: "namaProperti",
+      id: "no",
+      header: () => <div className="font-semibold text-center w-10">No</div>,
+      cell: ({ row }) => (
+        <div className="text-center w-10">{row.index + 1}</div>
+      ),
+    },
+    {
+      accessorKey: "title",
       header: () => <div className="font-semibold">Nama Properti</div>,
-      cell: ({ row }) => <div className="font-medium">{row.getValue("namaProperti")}</div>,
+      cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
     },
     {
-      accessorKey: "developer",
+      accessorKey: "company_name",
       header: () => <div className="font-semibold">Developer</div>,
-      cell: ({ row }) => <div>{row.getValue("developer")}</div>,
+      cell: ({ row }) => <div>{row.getValue("company_name")}</div>,
     },
     {
-      accessorKey: "alamat",
+      accessorKey: "address",
       header: () => <div className="font-semibold">Alamat</div>,
       cell: ({ row }) => (
         <div className="truncate max-w-xs text-muted-foreground">
-          {row.getValue("alamat")}
+          {row.getValue("address")}
         </div>
       ),
     },
     {
-      accessorKey: "harga",
+      accessorKey: "price",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -122,9 +98,9 @@ export default function PropertiesList() {
         </Button>
       ),
       cell: ({ row }) => {
-        const harga = row.getValue("harga") as number
+        const harga = row.getValue("price") as number
         return (
-          <div className="text-right font-medium">
+          <div className="text-left font-medium">
             Rp {harga.toLocaleString("id-ID")}
           </div>
         )
@@ -161,6 +137,7 @@ export default function PropertiesList() {
     },
   ]
 
+
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -188,7 +165,11 @@ export default function PropertiesList() {
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow
+                key={headerGroup.id}
+                // className="bg-muted/80 divide-x divide-border" // 🔹 header abu & garis vertikal
+                className="bg-muted/80 h-2"
+              >
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
                     {flexRender(header.column.columnDef.header, header.getContext())}

@@ -12,11 +12,11 @@ import { ModeToggle } from "@/components/mode-toggle" // 🌙 import toggle
 
 import AnalyticsDashboard from "@/components/AnalyticsDashboard"
 import ChartsSection from "@/components/ChartsSection"
-import DraftSection from "@/components/DraftSection"
+// import DraftSection from "@/components/DraftSection"
 import AddProperties  from "@/components/AddProperties"
 // import ReviewSection from "@/components/ReviewSection"
 import ApprovalSection from "@/components/ApprovalSection"
-import HistorySection from "@/components/HistorySection"
+// import HistorySection from "@/components/HistorySection"
 import CustomerInfo from "@/components/CustomerInfo"
 import DeveloperInfo from "@/components/DeveloperInfo"
 import PropertiesList from "@/components/ListProperties"
@@ -36,14 +36,15 @@ export default function Dashboard() {
           );
       case "Approval":
           return <ApprovalSection />
-      case "Add Properties":
-        return <AddProperties />
       case "Customer List":
         return <CustomerInfo />
       case "Developer List":
         return <DeveloperInfo />
       case "Properties List":
-        return <PropertiesList />
+          return <PropertiesList />
+      case "Add Properties":
+        return <AddProperties />
+  
       default:
         return null
     }

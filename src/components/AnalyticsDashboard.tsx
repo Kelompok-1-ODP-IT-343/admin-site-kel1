@@ -8,6 +8,7 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
+  Hourglass
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -29,48 +30,52 @@ const COLORS = {
 
 const MAX_BORROWERS = 20000;
 
-const kpiData = [
-  {
-    title: "Approve",
-    subtitle: "Total approved",
-    value: 82,
-    trend: +5.2,
-    icon: CheckCircle2,
-    color: COLORS.teal,
-    unit: "%",
-  },
-  {
-    title: "Reject",
-    subtitle: "Total rejected",
-    value: 18,
-    trend: -1.4,
-    icon: XCircle,
-    color: COLORS.orange,
-    unit: "%",
-  },
-  {
-    title: "Approval Rate",
-    subtitle: "This period",
-    value: 82,
-    trend: +3.1,
-    icon: Percent,
-    color: COLORS.lime,
-    unit: "%",
-  },
-  {
-    title: "Active Borrowers",
-    subtitle: "Nasabah aktif",
-    value: 8200,
-    trend: +2.8,
-    icon: Users,
-    color: COLORS.teal,
-    unit: "rb",
-  },
-];
 
 export default function AnalyticsKpiRadial() {
   const [range, setRange] = useState("30d");
   const ranges = ["7d", "30d", "90d", "YTD"];
+  type KpiItem = {
+    title: string;
+    subtitle: string;
+    value: number;
+    trend: number;
+    icon: any;
+    color: string;
+    unit: string;
+  };
+
+type KpiRangeKey = "7d" | "30d" | "90d" | "YTD";
+  // Data KPI per range
+  const kpiRanges = {
+    "7d": [
+      { title: "Approve", subtitle: "Total Approved", value: 15, trend: +3.2, icon: CheckCircle2, color: COLORS.teal, unit: "" },
+      { title: "Reject", subtitle: "Total Rejected", value: 4, trend: -0.8, icon: XCircle, color: COLORS.orange, unit: "" },
+      { title: "Pending", subtitle: "Total Pending", value: 6, trend: +1.5, icon: Hourglass, color: COLORS.lime, unit: "" },
+      { title: "Customers", subtitle: "Nasabah Aktif", value: 2500, trend: +1.2, icon: Users, color: COLORS.teal, unit: "rb" },
+    ],
+    "30d": [
+      { title: "Approve", subtitle: "Total Approved", value: 82, trend: +5.2, icon: CheckCircle2, color: COLORS.teal, unit: "" },
+      { title: "Reject", subtitle: "Total Rejected", value: 18, trend: -1.4, icon: XCircle, color: COLORS.orange, unit: "" },
+      { title: "Pending", subtitle: "Total Pending", value: 27, trend: +3.1, icon: Hourglass, color: COLORS.lime, unit: "" },
+      { title: "Customers", subtitle: "Nasabah Aktif", value: 8200, trend: +2.8, icon: Users, color: COLORS.teal, unit: "rb" },
+    ],
+    "90d": [
+      { title: "Approve", subtitle: "Total Approved", value: 210, trend: +7.9, icon: CheckCircle2, color: COLORS.teal, unit: "" },
+      { title: "Reject", subtitle: "Total Rejected", value: 45, trend: -2.2, icon: XCircle, color: COLORS.orange, unit: "" },
+      { title: "Pending", subtitle: "Total Pending", value: 60, trend: +4.4, icon: Hourglass, color: COLORS.lime, unit: "" },
+      { title: "Customers", subtitle: "Nasabah Aktif", value: 15200, trend: +3.4, icon: Users, color: COLORS.teal, unit: "rb" },
+    ],
+    "YTD": [
+      { title: "Approve", subtitle: "Total Approved", value: 780, trend: +9.8, icon: CheckCircle2, color: COLORS.teal, unit: "" },
+      { title: "Reject", subtitle: "Total Rejected", value: 180, trend: -3.0, icon: XCircle, color: COLORS.orange, unit: "" },
+      { title: "Pending", subtitle: "Total Pending", value: 110, trend: +5.5, icon: Hourglass, color: COLORS.lime, unit: "" },
+      { title: "Customers", subtitle: "Nasabah Aktif", value: 19300, trend: +4.1, icon: Users, color: COLORS.teal, unit: "rb" },
+    ],
+  };
+
+  // Ambil data sesuai range
+  const kpiData: KpiItem[] = kpiRanges[range as KpiRangeKey];
+
 
   return (
     <div className="space-y-6">

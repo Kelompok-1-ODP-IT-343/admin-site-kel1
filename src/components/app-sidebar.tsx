@@ -39,10 +39,11 @@ import {
 const menuItems = [
   { name: "Home", icon: Home },
   { name: "Approval", icon: CheckSquare },
-  { name: "Add Properties", icon: FilePlus2 },
   { name: "Customer List", icon: Users },
   { name: "Developer List", icon: Building2 },
   { name: "Properties List", icon: FolderKanban },
+  { name: "Add Properties", icon: FilePlus2 },
+
 ]
 
 export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
@@ -64,7 +65,7 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
       {/* === MENU === */}
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          {/* <SidebarGroupLabel>Menu</SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -72,16 +73,17 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
                   <SidebarMenuButton asChild>
                     <button
                       onClick={() => onSelect(item.name)}
-                      className={`flex items-center gap-2 w-full px-3 py-2 rounded-md transition-colors
+                      className={`flex items-center gap-3 w-full px-4 py-2 rounded-lg transition-all duration-150
                         ${
                           activeMenu === item.name
-                            ? "bg-gray-200 text-gray-900 font-semibold"
-                            : "text-gray-600 hover:bg-gray-100"
+                            ? "bg-gray-200 text-gray-900 font-semibold shadow-sm scale-[1.02]"
+                            : "text-gray-600 hover:bg-gray-100 hover:scale-[1.01]"
                         }`}
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.name}</span>
+                      <item.icon className="h-8 w-8" />
+                      <span className="text-[16px]">{item.name}</span>
                     </button>
+
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -97,7 +99,7 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
             <button className="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors">
               <div className="flex items-center gap-3 overflow-hidden">
                 <Image
-                  src="/avatar-ahong.png"
+                  src="/images/avatars/cecilion.png"
                   alt="Profile"
                   width={32}
                   height={32}
@@ -120,7 +122,7 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
             <DropdownMenuLabel>
               <div className="flex items-start gap-2">
                 <Image
-                  src="/avatar-ahong.png"
+                  src="/images/avatars/cecilion.png"
                   alt="Profile"
                   width={36}
                   height={36}
@@ -146,15 +148,16 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
             </DropdownMenuLabel>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/account")}>
+            <DropdownMenuItem onClick={() => router.push("/akun?tab=settings")}>
               <Settings className="mr-2 h-4 w-4" /> Account Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/notifications")}>
+            <DropdownMenuItem onClick={() => router.push("/akun?tab=notifications")}>
               <Bell className="mr-2 h-4 w-4" /> Notifications
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/help")}>
+            <DropdownMenuItem onClick={() => router.push("/akun?tab=help")}>
               <HelpCircle className="mr-2 h-4 w-4" /> Help
             </DropdownMenuItem>
+
 
             <DropdownMenuSeparator />
             <DropdownMenuItem

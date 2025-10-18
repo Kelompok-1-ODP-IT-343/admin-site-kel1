@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Settings2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -69,9 +69,9 @@ export default function DeveloperTable() {
       enableHiding: false,
     },
     {
-      accessorKey: "name",
+      accessorKey: "company_name",
       header: () => <div className="font-semibold">Developer</div>,
-      cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
+      cell: ({ row }) => <div className="capitalize">{row.getValue("company_name")}</div>,
     },
     {
       accessorKey: "email",
@@ -79,7 +79,7 @@ export default function DeveloperTable() {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="font-semibold"
+          className="font-semibold p-0 m-0 h-0"
         >
           Email
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -89,38 +89,31 @@ export default function DeveloperTable() {
     },
     {
       accessorKey: "phone",
-      header: () => <div className="text-right font-semibold">Phone</div>,
+      header: () => <div className="font-semibold">Phone</div>,
       cell: ({ row }) => {
         const phone = row.getValue("phone") as string
-        return <div className="text-right font-medium">{phone}</div>
+        return <div className="text-center font-medium">{phone}</div>
       },
     },
     {
       id: "actions",
       enableHiding: false,
+      header: () => <div className="font-semibold text-center">Action</div>,
       cell: ({ row }) => {
         const developer = row.original
         return (
-          <div className="flex justify-end">
+          <div className="flex justify-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-9 w-9 rounded-lg border-muted-foreground/20 hover:bg-muted"
+                >
+                  <Settings2 className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => console.log("Delete", developer.id)}
-                  className="text-red-500 focus:text-red-600"
-                >
-                  Delete
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigator.clipboard.writeText(developer.id)}
-                >
-                  Copy Developer ID
-                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
                     setSelectedDeveloper(developer)
@@ -128,6 +121,18 @@ export default function DeveloperTable() {
                   }}
                 >
                   View Developer
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => navigator.clipboard.writeText(developer.id)}
+                >
+                  Copy Developer ID
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => console.log("Delete", developer.id)}
+                  className="text-red-500 focus:text-red-600"
+                >
+                  Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -186,36 +191,79 @@ export default function DeveloperTable() {
         </DropdownMenu>
       </div>
 
-      <div className="overflow-hidden rounded-md border">
-        <Table>
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <Table className="w-full border-collapse">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="font-semibold">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+              <TableRow
+                key={headerGroup.id}
+                // className="bg-muted/80 divide-x divide-border" // 🔹 header abu & garis vertikal
+                className="bg-muted/80 divide-x divide-border h-2"
+              >
+                {/* Kolom nomor */}
+                <TableHead className="py-2 px-3 text-sm font-semibold text-foreground text-center w-[60px]">
+                  No
+                </TableHead>
+
+                {headerGroup.headers
+                  // 🔹 Hilangkan header checkbox/select
+                  .filter((header) => header.column.id !== "select")
+                  .map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="py-2 px-3 text-sm font-semibold text-foreground text-center"
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
               </TableRow>
             ))}
           </TableHeader>
 
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            {table.getRowModel().rows.length ? (
+              table
+                .getRowModel()
+                .rows.map((row, index) => (
+                  <TableRow
+                    key={row.id}
+                    className="hover:bg-muted/30 transition-colors duration-150 divide-x divide-border"
+                  >
+                    {/* Kolom nomor urut */}
+                    <TableCell className="py-3 px-4 text-sm font-medium text-center w-[60px]">
+                      {index + 1}
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
+
+                    {row
+                      .getVisibleCells()
+                      // 🔹 Hilangkan sel checkbox/select
+                      .filter((cell) => cell.column.id !== "select")
+                      .map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          style={{
+                            textAlign: cell.column.id === "actions" ? "center" : "left",
+                          }}
+                          className={`
+                            py-3 px-4 text-sm
+                            ${
+                              cell.column.id === "email"
+                                ? "text-muted-foreground"
+                                : "font-medium"
+                            }
+                          `}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                  </TableRow>
+                ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={table.getAllColumns().length + 1}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   No results.
                 </TableCell>
               </TableRow>

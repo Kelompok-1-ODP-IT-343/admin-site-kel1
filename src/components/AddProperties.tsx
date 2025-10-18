@@ -18,13 +18,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { Home, Wallet, Ruler, ImageIcon } from "lucide-react"
 
 export default function AddProperties() {
   const [step, setStep] = useState(1)
 
   // State sementara untuk data form
   const [formData, setFormData] = useState({
-    namaProperti: "",
+    title: "",
     developer: "",
     tipe: "",
     alamat: "",
@@ -53,29 +54,50 @@ export default function AddProperties() {
   const nextStep = () => setStep((s) => Math.min(s + 1, 4))
   const prevStep = () => setStep((s) => Math.max(s - 1, 1))
 
-  return (
-    <div className="max-w-3xl mx-auto mt-10 space-y-6">
-      <Card className="shadow-sm border rounded-2xl">
-        <CardHeader>
-          <CardTitle>
-            {step === 1 && "🏠 Informasi Dasar Properti"}
-            {step === 2 && "💰 Informasi Harga & Pembiayaan"}
-            {step === 3 && "📐 Spesifikasi Fisik"}
-            {step === 4 && "📁 Upload Gambar"}
-          </CardTitle>
-        </CardHeader>
+
+return (
+  <div className="max-w-3xl mx-auto mt-10 space-y-6">
+    <Card className="shadow-sm border rounded-2xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {step === 1 && (
+            <>
+              <Home className="w-5 h-5 text-orange-500" />
+              <span>Informasi Dasar Properti</span>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <Wallet className="w-5 h-5 text-green-500" />
+              <span>Informasi Harga & Pembiayaan</span>
+            </>
+          )}
+          {step === 3 && (
+            <>
+              <Ruler className="w-5 h-5 text-blue-500" />
+              <span>Spesifikasi Fisik</span>
+            </>
+          )}
+          {step === 4 && (
+            <>
+              <ImageIcon className="w-5 h-5 text-teal-500" />
+              <span>Upload Gambar</span>
+            </>
+          )}
+        </CardTitle>
+      </CardHeader>
 
         <CardContent className="space-y-4">
           {/* STEP 1 */}
           {step === 1 && (
             <div className="grid gap-4">
               <div>
-                <Label>Nama Properti / Proyek</Label>
-                <Input name="namaProperti" value={formData.namaProperti} onChange={handleChange} placeholder="Ciputra Residence BSD Cluster Aster" />
+                <Label className="mb-1.5 block">Nama Properti</Label>
+                <Input name="title" value={formData.title} onChange={handleChange} placeholder="Ciputra Residence BSD Cluster Aster" />
               </div>
 
               <div>
-                <Label>Developer</Label>
+                <Label className="mb-1.5 block">Developer</Label>
                 <Select onValueChange={(v) => setFormData({ ...formData, developer: v })}>
                   <SelectTrigger><SelectValue placeholder="Pilih Developer" /></SelectTrigger>
                   <SelectContent>
@@ -87,7 +109,7 @@ export default function AddProperties() {
               </div>
 
               <div>
-                <Label>Tipe Properti</Label>
+                <Label className="mb-1.5 block">Tipe Properti</Label>
                 <Select onValueChange={(v) => setFormData({ ...formData, tipe: v })}>
                   <SelectTrigger><SelectValue placeholder="Pilih Tipe Properti" /></SelectTrigger>
                   <SelectContent>
@@ -100,23 +122,23 @@ export default function AddProperties() {
               </div>
 
               <div>
-                <Label>Alamat Lengkap</Label>
+                <Label className="mb-1.5 block">Alamat Lengkap</Label>
                 <Textarea name="alamat" value={formData.alamat} onChange={handleChange} placeholder="Jl. BSD Raya Utama No. 5, Tangerang Selatan" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Kota / Kabupaten</Label>
+                  <Label className="mb-1.5 block">Kota atau Kabupaten</Label>
                   <Input name="kota" value={formData.kota} onChange={handleChange} />
                 </div>
                 <div>
-                  <Label>Provinsi</Label>
+                  <Label className="mb-1.5 block">Provinsi</Label>
                   <Input name="provinsi" value={formData.provinsi} onChange={handleChange} />
                 </div>
               </div>
 
               <div>
-                <Label>Koordinat (opsional)</Label>
+                <Label className="mb-1.5 block">Koordinat (opsional)</Label>
                 <Input name="koordinat" value={formData.koordinat} onChange={handleChange} placeholder="-6.244, 106.829" />
               </div>
             </div>
@@ -126,34 +148,34 @@ export default function AddProperties() {
           {step === 2 && (
             <div className="grid gap-4">
               <div>
-                <Label>Harga Properti (Total)</Label>
+                <Label className="mb-1.5 block">Harga Properti (Total)</Label>
                 <Input name="hargaTotal" value={formData.hargaTotal} onChange={handleChange} placeholder="850000000" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Harga Tanah /m²</Label>
+                  <Label className="mb-1.5 block">Harga Tanah /m²</Label>
                   <Input name="hargaTanah" value={formData.hargaTanah} onChange={handleChange} />
                 </div>
                 <div>
-                  <Label>Harga Bangunan /m²</Label>
+                  <Label className="mb-1.5 block">Harga Bangunan /m²</Label>
                   <Input name="hargaBangunan" value={formData.hargaBangunan} onChange={handleChange} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>DP Minimal (%)</Label>
+                  <Label className="mb-1.5 block">DP Minimal (%)</Label>
                   <Input name="dp" value={formData.dp} onChange={handleChange} />
                 </div>
                 <div>
-                  <Label>Cicilan Awal Estimasi</Label>
+                  <Label className="mb-1.5 block">Cicilan Awal Estimasi</Label>
                   <Input name="cicilan" value={formData.cicilan} onChange={handleChange} readOnly className="bg-muted" />
                 </div>
               </div>
 
               <div>
-                <Label>Biaya Tambahan (opsional)</Label>
+                <Label className="mb-1.5 block">Biaya Tambahan (opsional)</Label>
                 <Input name="biayaTambahan" value={formData.biayaTambahan} onChange={handleChange} placeholder="BPHTB, Notaris, PPN" />
               </div>
             </div>
@@ -164,37 +186,37 @@ export default function AddProperties() {
             <div className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Luas Tanah (m²)</Label>
+                  <Label className="mb-1.5 block">Luas Tanah (m²)</Label>
                   <Input name="luasTanah" value={formData.luasTanah} onChange={handleChange} />
                 </div>
                 <div>
-                  <Label>Luas Bangunan (m²)</Label>
+                  <Label className="mb-1.5 block">Luas Bangunan (m²)</Label>
                   <Input name="luasBangunan" value={formData.luasBangunan} onChange={handleChange} />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label>Kamar Tidur</Label>
+                  <Label className="mb-1.5 block">Kamar Tidur</Label>
                   <Input name="kamarTidur" value={formData.kamarTidur} onChange={handleChange} />
                 </div>
                 <div>
-                  <Label>Kamar Mandi</Label>
+                  <Label className="mb-1.5 block">Kamar Mandi</Label>
                   <Input name="kamarMandi" value={formData.kamarMandi} onChange={handleChange} />
                 </div>
                 <div>
-                  <Label>Lantai</Label>
+                  <Label className="mb-1.5 block">Lantai</Label>
                   <Input name="lantai" value={formData.lantai} onChange={handleChange} />
                 </div>
               </div>
 
               <div>
-                <Label>Tahun Bangun / Renovasi</Label>
+                <Label className="mb-1.5 block">Tahun Bangun atau Renovasi</Label>
                 <Input name="tahunBangun" value={formData.tahunBangun} onChange={handleChange} />
               </div>
 
               <div>
-                <Label>Kondisi Properti</Label>
+                <Label className="mb-1.5 block">Kondisi Properti</Label>
                 <Select onValueChange={(v) => setFormData({ ...formData, kondisi: v })}>
                   <SelectTrigger><SelectValue placeholder="Pilih Kondisi" /></SelectTrigger>
                   <SelectContent>
@@ -214,14 +236,14 @@ export default function AddProperties() {
                 <EmptyMedia variant="icon" className="text-primary">
                   <IconFolder size={40} stroke={1.5} />
                 </EmptyMedia>
-                <EmptyTitle>Belum Ada Properti</EmptyTitle>
+                <EmptyTitle>Add Your Files</EmptyTitle>
                 <EmptyDescription>
-                  Tambahkan properti baru agar bisa muncul di daftar dan disimulasikan.
+                  Tambahkan gambar properti baru untuk profil properti.
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
                 <Button variant="outline" size="sm">
-                  Tambah Properti
+                  Upload Files
                 </Button>
               </EmptyContent>
             </Empty>

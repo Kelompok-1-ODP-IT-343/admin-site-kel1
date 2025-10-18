@@ -19,22 +19,17 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { customers, Customer } from "@/components/data/customers"
-import { ArrowUpIcon } from "lucide-react"
+// import { ArrowUpIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Calculator, Settings2 } from "lucide-react"
 
 export default function ApprovalTable() {
   const router = useRouter()
 
   const handleActionClick = (customer: Customer) => {
-    // kirim data lewat query string
-    const query = new URLSearchParams({
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-    }).toString()
-
-    router.push(`/dashboard/simulate?${query}`)
+    router.push(`/dashboard/simulate?id=${customer.id}`)
   }
+
 
   const columns: ColumnDef<Customer>[] = [
     {
@@ -49,14 +44,18 @@ export default function ApprovalTable() {
     },
     {
       accessorKey: "phone",
-      header: () => <div className="text-right font-semibold">Phone</div>,
+      header: () => <div className="font-semibold">Phone</div>,
       cell: ({ row }) => (
-        <div className="text-right font-medium">{row.getValue("phone")}</div>
+        <div className="text-center font-medium">{row.getValue("phone")}</div>
       ),
     },
     {
       id: "action",
-      header: () => <div className="text-center font-semibold"></div>,
+      header: () => (
+        <div className="text-center">
+          <Calculator className="inline-block w-4 h-4 text-muted-foreground" />
+        </div>
+      ),
       cell: ({ row }) => {
         const customer = row.original
         return (
@@ -66,8 +65,10 @@ export default function ApprovalTable() {
               size="sm"
               aria-label="Simulate"
               onClick={() => handleActionClick(customer)}
+              className="flex items-center gap-2" 
             >
-              Action
+              <Settings2 className="w-4 h-4" /> 
+              Action 
             </Button>
           </div>
         )
@@ -98,13 +99,27 @@ export default function ApprovalTable() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-md border">
-        <Table>
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <Table className="w-full border-collapse">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow
+                key={headerGroup.id}
+                className="bg-muted/80 divide-x divide-border" // 🔹 abu-abu header lebih gelap
+              >
+                {/* Kolom nomor */}
+                <TableHead className="py-3 px-4 text-sm font-semibold text-foreground text-center w-[60px]">
+                  No
+                </TableHead>
+
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    className={`
+                      py-3 px-4 text-sm font-semibold text-foreground
+                      ${header.column.id === "action" ? "text-center" : "text-center"}
+                    `}
+                  >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
@@ -114,10 +129,31 @@ export default function ApprovalTable() {
 
           <TableBody>
             {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+              table.getRowModel().rows.map((row, index) => (
+                <TableRow
+                  key={row.id}
+                  className="hover:bg-muted/30 transition-colors duration-150 divide-x divide-border"
+                >
+                  {/* Kolom nomor urut */}
+                  <TableCell className="py-3 px-4 text-sm font-medium text-center w-[60px]">
+                    {index + 1}
+                  </TableCell>
+
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      style={{
+                        textAlign: cell.column.id === "action" ? "center" : "left",
+                      }}
+                      className={`
+                        py-3 px-4 text-sm
+                        ${
+                          cell.column.id === "email"
+                            ? "text-muted-foreground"
+                            : "font-medium"
+                        }
+                      `}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -125,7 +161,10 @@ export default function ApprovalTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={table.getAllColumns().length + 1}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -134,7 +173,7 @@ export default function ApprovalTable() {
         </Table>
       </div>
 
-      <div className="flex items-center justify-end space-x-2 py-4">
+            <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"
           size="sm"

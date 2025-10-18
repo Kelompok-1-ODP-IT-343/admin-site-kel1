@@ -2,54 +2,87 @@
 
 import { useRouter } from 'next/navigation';
 import { loginBlueprint } from '@/services/auth';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const handleDemoLogin = async () => {
-    // Tanpa mengubah UI, gunakan blueprint login dan lanjut ke dashboard
+  const handleDemoLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     const result = await loginBlueprint({ username: 'admin', password: 'admin' });
     if (result.success) {
       router.push('/dashboard');
     } else {
-      // tidak mengubah UI; jika gagal cukup log error
       console.error('Login gagal:', result.message);
     }
   };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left side - Full Logo Section */}
+      {/* === LEFT SIDE === */}
       <div className="flex-1 bg-white flex items-center justify-center p-8">
         <img
           src="/logo-satuatap.png"
           alt="Satu Atap Logo"
-          className="w-[500px] h-auto object-contain" // ukuran besar, bisa disesuaikan
+          className="w-[500px] h-auto object-contain"
         />
       </div>
 
-      {/* Right side - Login Form */}
+      {/* === RIGHT SIDE === */}
       <div className="flex-1 bg-gray-50 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-[#3FD8D4] mb-8 text-center">
+        <Card className="w-full max-w-sm shadow-xl border border-gray-200">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-gray-900">
               Login Admin Satu Atap
-            </h2>
+            </CardTitle>
+            <CardDescription className="text-gray-500 text-sm">
+              Demo dashboard access.
+            </CardDescription>
+          </CardHeader>
 
-            <div className="space-y-6">
-              <button
-                onClick={handleDemoLogin}
-                className="w-full bg-[#3FD8D4] text-white py-3 px-4 rounded-lg hover:bg-[#2BB8B4] transition-colors font-semibold text-lg"
+          <CardContent>
+            <form onSubmit={handleDemoLogin} className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@satuatap.my.id"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="•••••••"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-[#3FD8D4] hover:bg-[#2BB8B4] text-white font-semibold"
               >
-                Demo Login
-              </button>
+                Login
+              </Button>
+            </form>
+          </CardContent>
 
-              <p className="text-sm text-[#757575] text-center">
-                Klik tombol di atas untuk masuk ke dashboard demo
-              </p>
-            </div>
-          </div>
-        </div>
+          <CardFooter className="text-center text-sm text-gray-500">
+            © 2025 BNI – Satu Atap Admin Dashboard
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

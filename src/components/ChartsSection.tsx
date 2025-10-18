@@ -2,8 +2,10 @@
 
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis,
   CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+
 
 const COLORS = {
   blue: "#3FD8D4",
@@ -83,7 +85,30 @@ export default function ChartsSection() {
           <BarChart data={funnel}>
             <CartesianGrid strokeDasharray="3 3" stroke={`${COLORS.gray}33`} />
             <XAxis dataKey="name" stroke={COLORS.gray} />
-            <YAxis stroke={COLORS.gray} />
+
+            {(() => {
+              // ambil nilai max funnel dan tambah 50
+              const maxValue = Math.max(...funnel.map((d) => d.value));
+              const upperLimit = maxValue + 50;
+
+              // buat ticks otomatis tiap 70 (atau sesuaikan)
+              const step = 70;
+              const ticks = [];
+              for (let i = 0; i <= upperLimit; i += step) ticks.push(i);
+              if (!ticks.includes(maxValue)) ticks.push(maxValue);
+              if (!ticks.includes(upperLimit)) ticks.push(upperLimit);
+              ticks.sort((a, b) => a - b);
+
+              return (
+                <YAxis
+                  stroke={COLORS.gray}
+                  domain={[0, upperLimit]}
+                  allowDecimals={false}
+                  ticks={ticks}
+                />
+              );
+            })()}
+
             <Tooltip />
             <Bar dataKey="value" radius={[10,10,0,0]}>
               <Cell fill={COLORS.blue} />
@@ -95,44 +120,42 @@ export default function ChartsSection() {
         </ResponsiveContainer>
       </ChartCard>
 
-      {/* Repayment */}
-      <ChartCard title="Ongoing Repayment Status">
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie
-                data={repayment}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={60}
-                outerRadius={90}
-                strokeWidth={2}
+
+      {/* Register */}
+      <ChartCard title="Customer Behavior Radar">
+        <section className="rounded-lg border p-4">
+
+          <div className="mx-auto aspect-square max-h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart
+                data={[
+                  { month: "January", pegawai: 186, nonPegawai: 160 },
+                  { month: "February", pegawai: 185, nonPegawai: 170 },
+                  { month: "March", pegawai: 207, nonPegawai: 180 },
+                  { month: "April", pegawai: 173, nonPegawai: 160 },
+                  { month: "May", pegawai: 160, nonPegawai: 190 },
+                  { month: "June", pegawai: 174, nonPegawai: 204 },
+                ]}
               >
-                {repayment.map((r, i) => (
-                  <Cell key={i} fill={r.color} />
-                ))}
-              </Pie>
-              <Legend />
-              <Tooltip formatter={(v: number) => `${v}%`} />
-            </PieChart>
-          </ResponsiveContainer>
-          <ul className="p-4 space-y-3 text-sm">
-            {repayment.map((r) => (
-              <li key={r.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block h-3 w-3 rounded-full"
-                    style={{ background: r.color }}
-                  />
-                  <span className="text-gray-900 dark:text-gray-100 font-medium">
-                    {r.name}
-                  </span>
-                </div>
-                <span className="text-gray-600 dark:text-gray-300">{r.value}%</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+                <PolarGrid radialLines={false} />
+                <PolarAngleAxis dataKey="month" />
+                <Radar
+                  dataKey="pegawai"
+                  stroke="#FF8500"
+                  strokeWidth={3}
+                  fillOpacity={0}
+                />
+                <Radar
+                  dataKey="nonPegawai"
+                  stroke="#3FD8D4"
+                  strokeWidth={3}
+                  fillOpacity={0}
+                />
+                <Tooltip />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
       </ChartCard>
     </div>
   );
@@ -143,15 +166,10 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
     <section className="rounded-2xl border bg-white dark:bg-neutral-950 dark:border-neutral-800 shadow-sm">
       <div className="px-5 py-3 border-b dark:border-neutral-800">
         <h3
-          className="font-semibold text-gray-900 dark:text-white"
+          className="font-semibold transition-colors duration-300"
           style={{
             fontFamily: "'Inter', sans-serif",
-            transition: "color 0.3s ease",
-            color:
-              typeof window !== "undefined" &&
-              document.documentElement.classList.contains("dark")
-                ? "#f5f5f5"
-                : "#111827", // gray-900 default
+            color: "hsl(var(--foreground))",
           }}
         >
           {title}
@@ -161,3 +179,4 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
     </section>
   );
 }
+

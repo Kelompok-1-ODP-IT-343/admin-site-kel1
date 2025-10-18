@@ -168,7 +168,7 @@ export default function SimulateDialog({
                 </div>
                 <div>
                   <h1 className="font-semibold text-lg text-black">
-                    Approval – Detail Pengajuan
+                    Approval Detail KPR
                   </h1>
                   <p className="text-xs">
                     Nasabah: <b>{customer.name}</b> • {customer.email}
