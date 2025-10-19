@@ -1,3 +1,5 @@
+//Data masih diambil dari customers.ts
+
 "use client"
 
 import * as React from "react"
@@ -105,7 +107,7 @@ export default function ApprovalTable() {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="bg-muted/80 divide-x divide-border" // 🔹 abu-abu header lebih gelap
+                className="bg-muted/80 divide-x divide-border" 
               >
                 {/* Kolom nomor */}
                 <TableHead className="py-3 px-4 text-sm font-semibold text-foreground text-center w-[60px]">

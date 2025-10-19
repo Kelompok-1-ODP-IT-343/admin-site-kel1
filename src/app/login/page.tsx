@@ -28,7 +28,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="akun min-h-screen flex">
       {/* === LEFT SIDE === */}
       <div className="flex-1 bg-white flex items-center justify-center p-8">
         <img

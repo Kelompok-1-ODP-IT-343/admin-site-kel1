@@ -197,7 +197,6 @@ export default function DeveloperTable() {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                // className="bg-muted/80 divide-x divide-border" // 🔹 header abu & garis vertikal
                 className="bg-muted/80 divide-x divide-border h-2"
               >
                 {/* Kolom nomor */}

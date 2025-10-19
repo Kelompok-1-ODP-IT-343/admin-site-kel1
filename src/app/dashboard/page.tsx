@@ -20,6 +20,7 @@ import ApprovalSection from "@/components/ApprovalSection"
 import CustomerInfo from "@/components/CustomerInfo"
 import DeveloperInfo from "@/components/DeveloperInfo"
 import PropertiesList from "@/components/ListProperties"
+import ApprovalProperties from "@/components/ApprovalProperties"
 
 export default function Dashboard() {
   const router = useRouter()
@@ -34,8 +35,10 @@ export default function Dashboard() {
               <ChartsSection />
             </div>
           );
-      case "Approval":
+      case "Approval KPR":
           return <ApprovalSection />
+      case "Approval Properties":
+          return <ApprovalProperties />
       case "Customer List":
         return <CustomerInfo />
       case "Developer List":

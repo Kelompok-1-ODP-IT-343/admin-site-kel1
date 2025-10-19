@@ -23,6 +23,7 @@ import {
   HelpCircle,
   LogOut,
   Settings,
+  Building
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -35,10 +36,11 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 
-// 🧭 Menu dengan ikon sesuai nama
+// Menu dengan ikon sesuai nama
 const menuItems = [
   { name: "Home", icon: Home },
-  { name: "Approval", icon: CheckSquare },
+  { name: "Approval KPR", icon: CheckSquare },
+  { name: "Approval Properties", icon: Building },
   { name: "Customer List", icon: Users },
   { name: "Developer List", icon: Building2 },
   { name: "Properties List", icon: FolderKanban },

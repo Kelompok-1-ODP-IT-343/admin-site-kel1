@@ -122,7 +122,7 @@ export default function ChartsSection() {
 
 
       {/* Register */}
-      <ChartCard title="Customer Behavior Radar">
+      <ChartCard title="User Registered">
         <section className="rounded-lg border p-4">
 
           <div className="mx-auto aspect-square max-h-[260px] w-full">

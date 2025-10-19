@@ -20,6 +20,8 @@ export type Customer = {
   postal_code: string
   ktp: string
   slip: string
+  credit_score: 1 | 2 | 3 | 4 | 5
+  credit_status: "Lancar" | "Dalam Perhatian Khusus" | "Kurang Lancar" | "Diragukan" | "Macet"
 
   // --- Data Pekerjaan ---
   occupation: string
@@ -54,6 +56,8 @@ export const customers: Customer[] = [
     postal_code: "12190",
     ktp: "/ktp_dummy.jpeg",
     slip: "/slip_dummy.png",
+    credit_score: 1,
+    credit_status: "Lancar",
 
     occupation: "Software Engineer",
     company_postal_code: "10210",
@@ -85,6 +89,8 @@ export const customers: Customer[] = [
     postal_code: "16424",
     ktp: "/ktp_dummy.jpeg",
     slip: "/slip_dummy.png",
+    credit_score: 5,
+    credit_status: "Macet",
 
     occupation: "UI/UX Designer",
     company_postal_code: "16426",
@@ -116,6 +122,8 @@ export const customers: Customer[] = [
     postal_code: "40141",
     ktp: "/ktp_dummy.jpeg",
     slip: "/slip_dummy.png",
+    credit_score: 3,
+    credit_status: "Kurang Lancar",
 
     occupation: "Data Analyst",
     company_postal_code: "40135",
@@ -147,6 +155,8 @@ export const customers: Customer[] = [
     postal_code: "60282",
     ktp: "/ktp_dummy.jpeg",
     slip: "/slip_dummy.png",
+    credit_score: 1,
+    credit_status: "Lancar",
 
     occupation: "Marketing Specialist",
     company_postal_code: "60234",
@@ -178,6 +188,8 @@ export const customers: Customer[] = [
     postal_code: "65119",
     ktp: "/ktp_dummy.jpeg",
     slip: "/slip_dummy.png",
+    credit_score: 1,
+    credit_status: "Lancar",
 
     occupation: "Civil Engineer",
     company_postal_code: "65111",
@@ -209,6 +221,8 @@ export const customers: Customer[] = [
     postal_code: "50134",
     ktp: "/ktp_dummy.jpeg",
     slip: "/slip_dummy.png",
+    credit_score: 1,
+    credit_status: "Lancar",
 
     occupation: "Finance Officer",
     company_postal_code: "50133",
@@ -240,6 +254,8 @@ export const customers: Customer[] = [
     postal_code: "90231",
     ktp: "/ktp_dummy.jpeg",
     slip: "/slip_dummy.png",
+    credit_score: 1,
+    credit_status: "Lancar",
 
     occupation: "Project Manager",
     company_postal_code: "90235",
@@ -271,6 +287,8 @@ export const customers: Customer[] = [
     postal_code: "55272",
     ktp: "/ktp_dummy.jpeg",
     slip: "/slip_dummy.png",
+    credit_score: 1,
+    credit_status: "Lancar",
 
     occupation: "Business Analyst",
     company_postal_code: "55233",

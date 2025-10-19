@@ -2,7 +2,7 @@
 
 import {
   Check, X, Calculator, FileDown, Settings2, Info, XCircle,
-  Plus, Trash2, User2, Wallet, BarChart3, FileText
+  Plus, Trash2, User2, Wallet, BarChart3, FileText, Download
 } from "lucide-react";
 import React, { JSX, useMemo, useState } from "react";
 // import {
@@ -12,6 +12,9 @@ import React, { JSX, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { customers } from "@/components/data/customers"
+import { Button } from "@/components/ui/button"
+// import jsPDF from "jspdf"
+// import html2canvas from "html2canvas"
 
 
 
@@ -42,7 +45,7 @@ export default function ApprovalDetailMockup(): JSX.Element {
   // cari customer berdasarkan ID
   const customer = customers.find(c => c.id === id);
 
- const name = customer?.name || "Tidak Diketahui";
+  const name = customer?.name || "Tidak Diketahui";
   const email = customer?.email || "unknown@example.com";
   const phone = customer?.phone || "-";
 
@@ -186,12 +189,24 @@ export default function ApprovalDetailMockup(): JSX.Element {
   const paged = rows.slice((page - 1) * pageSize, page * pageSize);
   const maxPage = Math.ceil(rows.length / pageSize);
 
+  const getCreditStatusColor = (status: string) => {
+    switch (status) {
+      case "Lancar": return "text-green-600 bg-green-100";
+      case "Dalam Perhatian Khusus": return "text-yellow-600 bg-yellow-100";
+      case "Kurang Lancar": return "text-orange-600 bg-orange-100";
+      case "Diragukan": return "text-red-600 bg-red-100";
+      case "Macet": return "text-red-700 bg-red-200";
+      default: return "text-gray-600 bg-gray-100";
+    }
+  };
+
   const chartData = rows.map((r) => ({
     month: r.month,
     payment: Math.round(r.payment),
   }));
 
   return (
+
     <div className="approval-page min-h-screen bg-white text-gray-700 relative">
 
 
@@ -326,6 +341,16 @@ export default function ApprovalDetailMockup(): JSX.Element {
                     <span className="text-muted-foreground">Kode Pos</span>
                     <span className="font-medium text-right">{customer.postal_code}</span>
                   </div>
+                  <div className="flex justify-between border-t pt-2 mt-2">
+                    <span className="text-muted-foreground">Credit Score (OJK)</span>
+                    <span
+                      className={`font-medium text-xs px-2 py-0.5 rounded-full ${getCreditStatusColor(
+                        customer.credit_status
+                      )}`}
+                    >
+                      {customer.credit_status} (Kode {customer.credit_score})
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -385,12 +410,24 @@ export default function ApprovalDetailMockup(): JSX.Element {
               {/* KTP */}
               <div className="border rounded-xl p-4 shadow-sm bg-gray-50 flex flex-col items-center">
                 {customer.ktp ? (
-                  <img
-                    src={customer.ktp}
-                    alt="KTP"
-                    className="w-full max-w-[400px] h-auto rounded-lg border object-cover"
-                    style={{ borderColor: colors.gray + "33" }}
-                  />
+                  <>
+                    <img
+                      src={customer.ktp}
+                      alt="KTP"
+                      className="w-full max-w-[400px] h-auto rounded-lg border object-cover"
+                      style={{ borderColor: colors.gray + "33" }}
+                    />
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="mt-3 text-[#0B63E5] border-[#0B63E5]/60 hover:bg-[#0B63E5]/10 font-semibold shadow-sm"
+                    >
+                      <a href={customer.ktp} download>
+                        <FileDown className="mr-2 h-4 w-4" /> Download KTP
+                      </a>
+                    </Button>
+
+                  </>
                 ) : (
                   <p className="text-sm text-gray-500 italic">Belum ada foto KTP</p>
                 )}
@@ -399,12 +436,23 @@ export default function ApprovalDetailMockup(): JSX.Element {
               {/* Slip Gaji */}
               <div className="border rounded-xl p-4 shadow-sm bg-gray-50 flex flex-col items-center">
                 {customer.slip ? (
-                  <img
-                    src={customer.slip}
-                    alt="Slip Gaji"
-                    className="w-full max-w-[400px] h-auto rounded-lg border object-cover"
-                    style={{ borderColor: colors.gray + "33" }}
-                  />
+                  <>
+                    <img
+                      src={customer.slip}
+                      alt="Slip Gaji"
+                      className="w-full max-w-[400px] h-auto rounded-lg border object-cover"
+                      style={{ borderColor: colors.gray + "33" }}
+                    />
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="mt-3 text-[#0B63E5] border-[#0B63E5]/60 hover:bg-[#0B63E5]/10 font-semibold shadow-sm"
+                    >
+                      <a href={customer.ktp} download>
+                        <FileDown className="mr-2 h-4 w-4" /> Download KTP
+                      </a>
+                    </Button>
+                  </>
                 ) : (
                   <p className="text-sm text-gray-500 italic">Belum ada foto slip gaji</p>
                 )}
