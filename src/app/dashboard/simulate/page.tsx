@@ -51,14 +51,20 @@ export default function ApprovalDetailMockup(): JSX.Element {
 
 
 
-  const [loanAmount, setLoanAmount] = useState<number>(850_000_000);
-  const [tenor, setTenor] = useState<number>(240);
+  // const [loanAmount, setLoanAmount] = useState<number>(850_000_000);
+  // const [tenor, setTenor] = useState<number>(240);
   const [startFloatAt, setStartFloatAt] = useState<number>(13);
   const [flatRate, setFlatRate] = useState<number>(5.99);
   const [floatRate, setFloatRate] = useState<number>(13.5);
   const [scheme, setScheme] = useState<Scheme>("flat-floating");
-  const [page, setPage] = useState<number>(1);
-  const pageSize = 12;
+  // const [page, setPage] = useState<number>(1);
+  // const pageSize = 12;
+  const [hargaProperti, setHargaProperti] = useState(850_000_000);
+  const [persenDP, setPersenDP] = useState(20);
+  const [jangkaWaktu, setJangkaWaktu] = useState(20);
+  const tenor = jangkaWaktu * 12;
+  const loanAmount = hargaProperti * (1 - persenDP / 100);
+
 
   // ---- fitur baru: multi rate adjustment ----
   const [rateSegments, setRateSegments] = useState<RateSegment[]>([
@@ -78,116 +84,140 @@ export default function ApprovalDetailMockup(): JSX.Element {
   }
 
   // Schedule builders
-  function buildFlatSchedule(P: number, months: number, rateAnnual: number): Row[] {
-    const rMonthly = rateAnnual / 100 / 12;
-    const principalPart = P / months;
-    const interestPart = P * rMonthly;
-    let balance = P;
-    const rows: Row[] = [];
-    for (let m = 1; m <= months; m++) {
-      const principalPaid = m === months ? balance : principalPart;
-      const interestPaid = interestPart;
-      const payment = principalPaid + interestPaid;
-      balance = Math.max(0, balance - principalPaid);
-      rows.push({
-        month: m,
-        principalComponent: principalPaid,
-        interestComponent: interestPaid,
-        payment,
-        balance,
-        rateApplied: rateAnnual,
-      });
-    }
-    return rows;
-  }
+  // function buildFlatSchedule(P: number, months: number, rateAnnual: number): Row[] {
+  //   const rMonthly = rateAnnual / 100 / 12;
+  //   const principalPart = P / months;
+  //   const interestPart = P * rMonthly;
+  //   let balance = P;
+  //   const rows: Row[] = [];
+  //   for (let m = 1; m <= months; m++) {
+  //     const principalPaid = m === months ? balance : principalPart;
+  //     const interestPaid = interestPart;
+  //     const payment = principalPaid + interestPaid;
+  //     balance = Math.max(0, balance - principalPaid);
+  //     rows.push({
+  //       month: m,
+  //       principalComponent: principalPaid,
+  //       interestComponent: interestPaid,
+  //       payment,
+  //       balance,
+  //       rateApplied: rateAnnual,
+  //     });
+  //   }
+  //   return rows;
+  // }
 
-  function buildAnnuitySchedule(
-    P: number,
-    months: number,
-    rateAnnual: number,
-    startMonthIndex: number = 1
+  // function buildAnnuitySchedule(
+  //   P: number,
+  //   months: number,
+  //   rateAnnual: number,
+  //   startMonthIndex: number = 1
+  // ): Row[] {
+  //   const r = rateAnnual / 100 / 12;
+  //   if (months <= 0) return [];
+  //   const pay = r === 0 ? P / months : (P * r) / (1 - Math.pow(1 + r, -months));
+  //   const rows: Row[] = [];
+  //   let balance = P;
+  //   for (let i = 1; i <= months; i++) {
+  //     const interest = balance * r;
+  //     const principal = Math.min(balance, pay - interest);
+  //     balance = Math.max(0, balance - principal);
+  //     rows.push({
+  //       month: startMonthIndex + i - 1,
+  //       principalComponent: principal,
+  //       interestComponent: interest,
+  //       payment: principal + interest,
+  //       balance,
+  //       rateApplied: rateAnnual,
+  //     });
+  //   }
+  //   return rows;
+  // }
+
+  // ====== Perhitungan amortisasi berdasarkan segmen bunga ======
+  function buildMultiSegmentSchedule(
+    principal: number,
+    segments: { start: number; end: number; rate: number }[]
   ): Row[] {
-    const r = rateAnnual / 100 / 12;
-    if (months <= 0) return [];
-    const pay = r === 0 ? P / months : (P * r) / (1 - Math.pow(1 + r, -months));
-    const rows: Row[] = [];
-    let balance = P;
-    for (let i = 1; i <= months; i++) {
-      const interest = balance * r;
-      const principal = Math.min(balance, pay - interest);
-      balance = Math.max(0, balance - principal);
-      rows.push({
-        month: startMonthIndex + i - 1,
-        principalComponent: principal,
-        interestComponent: interest,
-        payment: principal + interest,
-        balance,
-        rateApplied: rateAnnual,
-      });
-    }
-    return rows;
-  }
+    const rows: Row[] = []
+    let balance = principal
 
-  // fungsi baru: bangun jadwal berdasarkan segmen rate
-  function buildMultiSegmentSchedule(): Row[] {
-    let balance = loanAmount;
-    const all: Row[] = [];
+    for (let s = 0; s < segments.length; s++) {
+      const seg = segments[s]
+      const months = seg.end - seg.start + 1
+      if (months <= 0 || balance <= 0) continue
 
-    rateSegments.forEach((seg) => {
-      const months = seg.end - seg.start + 1;
-      const segRows: Row[] = [];
-      const r = seg.rate / 100 / 12;
-      if (months <= 0) return;
+      const r = seg.rate / 100 / 12
 
-      const pay = r === 0 ? balance / months : (balance * r) / (1 - Math.pow(1 + r, -months));
+      // hitung ulang payment memakai saldo tersisa dari segmen sebelumnya
+      const pay = (balance * r) / (1 - Math.pow(1 + r, -(months + (segments.length - s - 1) * 12)))
 
-      for (let i = 1; i <= months; i++) {
-        const interest = balance * r;
-        const principal = Math.min(balance, pay - interest);
-        balance = Math.max(0, balance - principal);
+      for (let i = 0; i < months; i++) {
+        const interest = balance * r
+        const principalComp = pay - interest
+        balance -= principalComp
+        if (balance < 0) balance = 0
 
-        segRows.push({
-          month: seg.start + i - 1,
-          principalComponent: principal,
+        rows.push({
+          month: seg.start + i,
+          principalComponent: principalComp,
           interestComponent: interest,
-          payment: principal + interest,
+          payment: pay,
           balance,
-          rateApplied: seg.rate, // << tampil sesuai rate segmen
-        });
+          rateApplied: seg.rate,
+        })
       }
-
-      all.push(...segRows);
-    });
-
-    return all;
-  }
-
-
-  function buildHybridSchedule(): Row[] {
-    // kalau pakai fitur multi-rate, override
-    if (rateSegments.length > 1) {
-      return buildMultiSegmentSchedule();
     }
 
-    if (scheme === "all-flat") return buildFlatSchedule(loanAmount, tenor, flatRate);
-    if (scheme === "all-float") return buildAnnuitySchedule(loanAmount, tenor, floatRate, 1);
-
-    const flatMonths = Math.max(1, Math.min(startFloatAt - 1, tenor - 1));
-    const flatRows = buildFlatSchedule(loanAmount, flatMonths, flatRate);
-    const balanceAfterFlat = flatRows[flatRows.length - 1]?.balance ?? loanAmount;
-    const remaining = tenor - flatMonths;
-    const floatRows = buildAnnuitySchedule(balanceAfterFlat, remaining, floatRate, flatMonths + 1);
-    return [...flatRows, ...floatRows];
+    return rows
   }
 
-  const rows: Row[] = useMemo<Row[]>(() => buildHybridSchedule(), [
-    loanAmount, tenor, startFloatAt, flatRate, floatRate, scheme, rateSegments,
-  ]);
+  // ====== Kalkulasi total ======
+  const rows = useMemo(() => {
+    if (rateSegments.length === 0) return []
+    return buildMultiSegmentSchedule(loanAmount, rateSegments)
+  }, [loanAmount, rateSegments, tenor])
 
-  const totalPayment = useMemo(() => rows.reduce((s, r) => s + r.payment, 0), [rows]);
-  const totalInterest = useMemo(() => rows.reduce((s, r) => s + r.interestComponent, 0), [rows]);
-  const paged = rows.slice((page - 1) * pageSize, page * pageSize);
-  const maxPage = Math.ceil(rows.length / pageSize);
+  const totalPayment = useMemo(
+    () => rows.reduce((sum, r) => sum + r.payment, 0),
+    [rows]
+  )
+  const totalInterest = useMemo(
+    () => rows.reduce((sum, r) => sum + r.interestComponent, 0),
+    [rows]
+  )
+  const pageSize = 12
+  const [page, setPage] = useState(1)
+  const paged = rows.slice((page - 1) * pageSize, page * pageSize)
+  const maxPage = Math.ceil(rows.length / pageSize)
+
+
+
+  // function buildHybridSchedule(): Row[] {
+  //   // kalau pakai fitur multi-rate, override
+  //   if (rateSegments.length > 1) {
+  //     return buildMultiSegmentSchedule();
+  //   }
+
+  //   if (scheme === "all-flat") return buildFlatSchedule(loanAmount, tenor, flatRate);
+  //   if (scheme === "all-float") return buildAnnuitySchedule(loanAmount, tenor, floatRate, 1);
+
+  //   const flatMonths = Math.max(1, Math.min(startFloatAt - 1, tenor - 1));
+  //   const flatRows = buildFlatSchedule(loanAmount, flatMonths, flatRate);
+  //   const balanceAfterFlat = flatRows[flatRows.length - 1]?.balance ?? loanAmount;
+  //   const remaining = tenor - flatMonths;
+  //   const floatRows = buildAnnuitySchedule(balanceAfterFlat, remaining, floatRate, flatMonths + 1);
+  //   return [...flatRows, ...floatRows];
+  // }
+
+  // const rows: Row[] = useMemo<Row[]>(() => buildHybridSchedule(), [
+  //   loanAmount, tenor, startFloatAt, flatRate, floatRate, scheme, rateSegments,
+  // ]);
+
+  // const totalPayment = useMemo(() => rows.reduce((s, r) => s + r.payment, 0), [rows]);
+  // const totalInterest = useMemo(() => rows.reduce((s, r) => s + r.interestComponent, 0), [rows]);
+  // const paged = rows.slice((page - 1) * pageSize, page * pageSize);
+  // const maxPage = Math.ceil(rows.length / pageSize);
 
   const getCreditStatusColor = (status: string) => {
     switch (status) {
@@ -449,7 +479,7 @@ export default function ApprovalDetailMockup(): JSX.Element {
                       className="mt-3 text-[#0B63E5] border-[#0B63E5]/60 hover:bg-[#0B63E5]/10 font-semibold shadow-sm"
                     >
                       <a href={customer.ktp} download>
-                        <FileDown className="mr-2 h-4 w-4" /> Download KTP
+                        <FileDown className="mr-2 h-4 w-4" /> Download Slip Gaji
                       </a>
                     </Button>
                   </>
@@ -463,118 +493,176 @@ export default function ApprovalDetailMockup(): JSX.Element {
 
         {/* Control Panel */}
         <section className="grid lg:grid-cols-2 gap-6 items-start">
-          {/* Pengaturan Bunga */}
-          <div className="rounded-2xl bg-white p-5 border  max-w-[500px]" style={{ borderColor: colors.gray + "33" }}>
+          {/* Pengaturan KPR */}
+          <div
+            className="rounded-2xl bg-white p-5 border max-w-[500px]"
+            style={{ borderColor: colors.gray + "33" }}
+          >
             <div className="flex items-center gap-2 mb-3">
               <Settings2 className="h-9 w-9" color={colors.blue} />
-              <h2 className="font-semibold text-black text-base">Pengaturan Bunga</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <label>
-                <span>Plafon (Rp)</span>
-                <input
-                  type="number"
-                   className="w-full border rounded px-2 py-1 mt-1 bg-white text-gray-900"
-                  style={{ borderColor: colors.gray + "55" }}
-                  value={loanAmount}
-                  onChange={(e) => setLoanAmount(parseInt(e.target.value || "0", 10))}
-                />
-              </label>
-              <label>
-                <span>Tenor (bulan)</span>
-                <input
-                  type="number"
-                  className="w-full border rounded px-2 py-1 mt-1 bg-white text-gray-900"
-                  style={{ borderColor: colors.gray + "55" }}
-                  value={tenor}
-                  onChange={(e) => setTenor(parseInt(e.target.value || "0", 10))}
-                />
-              </label>
-            <div></div>
+              <h2 className="font-semibold text-black text-base">Pengaturan KPR</h2>
             </div>
 
-            {/* --- tambahan: multi-rate adjustment UI --- */}
+            {/* === SLIDER HARGA PROPERTI, DP, JANGKA WAKTU === */}
+            <div className="space-y-6 mb-4">
+              {/* Harga Properti */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-gray-700 font-medium">Harga Properti</label>
+                  <span className="font-semibold text-gray-900">
+                    Rp{hargaProperti.toLocaleString("id-ID")}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={100_000_000}
+                  max={5_000_000_000}
+                  step={10_000_000}
+                  value={hargaProperti}
+                  onChange={(e) => setHargaProperti(Number(e.target.value))}
+                  className="w-full accent-[#3FD8D4] cursor-pointer"
+                />
+              </div>
+
+              {/* DP */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-gray-700 font-medium">Uang Muka (DP)</label>
+                  <span className="font-semibold text-gray-900">
+                    {persenDP}% (
+                    {new Intl.NumberFormat("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                      minimumFractionDigits: 0,
+                    }).format(hargaProperti * (persenDP / 100))}
+                    )
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={10}
+                  max={80}
+                  step={5}
+                  value={persenDP}
+                  onChange={(e) => setPersenDP(Number(e.target.value))}
+                  className="w-full accent-[#3FD8D4] cursor-pointer"
+                />
+              </div>
+
+              {/* Jangka Waktu */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-gray-700 font-medium">Jangka Waktu</label>
+                  <span className="font-semibold text-gray-900">
+                    {jangkaWaktu} tahun ({jangkaWaktu * 12} bulan)
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={30}
+                  step={1}
+                  value={jangkaWaktu}
+                  onChange={(e) => setJangkaWaktu(Number(e.target.value))}
+                  className="w-full accent-[#3FD8D4] cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* === PENYESUAIAN MULTI-RATE === */}
             <div className="mb-4 border rounded-lg p-3" style={{ borderColor: colors.gray + "33" }}>
-              <p className="text-sm font-medium mb-2">Penyesuaian Multi-Rate</p>
-                {rateSegments.map((seg, idx) => (
-                  <div key={idx} className="grid grid-cols-4 gap-2 mb-2 items-end">
-                    <label className="text-xs">
-                      Mulai
-                      <input
-                        type="number"
-                        className="w-full border rounded px-2 py-1 mt-1 bg-white text-gray-900"
-                        value={seg.start}
-                        min={1}
-                        max={tenor}
-                        onChange={(e) => {
-                          const val = Math.max(1, Math.min(parseInt(e.target.value || "1"), tenor));
-                          setRateSegments((prev) =>
-                            prev.map((s, i) => (i === idx ? { ...s, start: val } : s))
-                          );
-                        }}
-                      />
-                    </label>
-                    <label className="text-xs">
-                      Selesai
-                      <input
-                        type="number"
-                        className="w-full border rounded px-2 py-1 mt-1 bg-white text-gray-900"
-                        value={seg.end}
-                        min={seg.start}
-                        max={tenor}
-                        onChange={(e) => {
-                          const val = Math.max(seg.start, Math.min(parseInt(e.target.value || "1"), tenor));
-                          setRateSegments((prev) =>
-                            prev.map((s, i) => (i === idx ? { ...s, end: val } : s))
-                          );
-                        }}
-                      />
-                    </label>
-                    <label className="text-xs">
-                      Rate (%)
-                      <input
-                        type="number"
-                        step="0.01"
-                        // className="w-full border rounded px-2 py-1 mt-1"
-                        className="w-full border rounded px-2 py-1 mt-1 bg-white text-gray-900"
-                        value={seg.rate}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value || "0");
-                          setRateSegments((prev) =>
-                            prev.map((s, i) => (i === idx ? { ...s, rate: val } : s))
-                          );
-                        }}
-                      />
-                    </label>
-                    <button
-                      onClick={() =>
-                        setRateSegments((prev) => prev.filter((_, i) => i !== idx))
-                      }
-                      className="text-red-500 hover:text-red-600 flex items-center gap-1 justify-center"
-                    >
-                      <Trash2 className="h-4 w-4" /> Hapus
-                    </button>
-                  </div>
-                ))}
+              <p className="text-sm font-medium mb-2 text-gray-700">Penyesuaian Multi-Rate</p>
+
+              {rateSegments.map((seg, idx) => (
+                <div key={idx} className="grid grid-cols-4 gap-2 mb-2 items-end">
+                  <label className="text-xs">
+                    Mulai
+                    <input
+                      type="number"
+                      className="w-full border rounded px-2 py-1 mt-1 bg-white text-gray-900"
+                      value={seg.start}
+                      min={1}
+                      max={tenor}
+                      onChange={(e) => {
+                        const val = Math.max(1, Math.min(+e.target.value, tenor))
+                        setRateSegments((prev) =>
+                          prev.map((s, i) => (i === idx ? { ...s, start: val } : s))
+                        )
+                      }}
+                    />
+                  </label>
+                  <label className="text-xs">
+                    Selesai
+                    <input
+                      type="number"
+                      className="w-full border rounded px-2 py-1 mt-1 bg-white text-gray-900"
+                      value={seg.end}
+                      min={seg.start}
+                      max={tenor}
+                      onChange={(e) => {
+                        const val = Math.max(seg.start, Math.min(+e.target.value, tenor))
+                        setRateSegments((prev) =>
+                          prev.map((s, i) => (i === idx ? { ...s, end: val } : s))
+                        )
+                      }}
+                    />
+                  </label>
+                  <label className="text-xs">
+                    Rate (%)
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-full border rounded px-2 py-1 mt-1 bg-white text-gray-900"
+                      value={seg.rate}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value || "0")
+                        setRateSegments((prev) =>
+                          prev.map((s, i) => (i === idx ? { ...s, rate: val } : s))
+                        )
+                      }}
+                    />
+                  </label>
+                  <button
+                    onClick={() => setRateSegments((prev) => prev.filter((_, i) => i !== idx))}
+                    className="text-red-500 hover:text-red-600 flex items-center gap-1 justify-center"
+                  >
+                    <Trash2 className="h-4 w-4" /> Hapus
+                  </button>
+                </div>
+              ))}
+
               <button
                 onClick={() => {
-                  const lastEnd = rateSegments[rateSegments.length - 1]?.end || 0;
+                  const lastSeg = rateSegments[rateSegments.length - 1]
+                  const lastEnd = lastSeg?.end || 0
                   if (lastEnd < tenor) {
-                    const nextStart = lastEnd + 1;
-                    const nextEnd = Math.min(nextStart + 11, tenor); // default 12 bulan segmen
-                    setRateSegments([
-                      ...rateSegments,
-                      { start: nextStart, end: nextEnd, rate: floatRate },
-                    ]);
+                    const nextStart = lastEnd + 1
+                    const nextEnd = Math.min(nextStart + 11, tenor)
+                    const nextRate =
+                      lastSeg.rate < 10 ? parseFloat((lastSeg.rate + 1).toFixed(2)) : lastSeg.rate
+
+                    setRateSegments((prev) => [
+                      ...prev,
+                      { start: nextStart, end: nextEnd, rate: nextRate },
+                    ])
                   }
                 }}
-                className="mt-2 flex items-center gap-2 text-sm border rounded-lg px-3 py-1"
-                style={{ borderColor: colors.blue, color: colors.blue }}
+                disabled={
+                  rateSegments.length > 0 && rateSegments[rateSegments.length - 1].end >= tenor
+                }
+                className={`mt-2 flex items-center gap-2 text-sm rounded-lg px-3 py-1 border transition
+                  ${
+                    rateSegments.length > 0 &&
+                    rateSegments[rateSegments.length - 1].end >= tenor
+                      ? "opacity-50 cursor-not-allowed bg-gray-200 border-gray-300 text-gray-500"
+                      : "text-white bg-[#FF8500] border-[#FF8500] hover:bg-[#e67300]"
+                  }`}
               >
                 <Plus className="h-4 w-4" /> Tambah Segmen
               </button>
             </div>
           </div>
+
 
           {/* Rincian Angsuran */}
           <div className="rounded-2xl bg-white p-5 border -ml-30" style={{ borderColor: colors.gray + "33" }}>
