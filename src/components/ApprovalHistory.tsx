@@ -118,9 +118,9 @@ export default function ApprovalHistory() {
     },
     {
       accessorKey: "approval_date",
-      header: () => <div className="font-semibold">Tanggal</div>,
+      header: () => <div className="font-medium">Tanggal</div>,
       cell: ({ row }) => (
-        <div className="text-gray-700">{formatDate(row.getValue("approval_date") as string)}</div>
+        <div className="font-semibold">{formatDate(row.getValue("approval_date") as string)}</div>
       ),
     },
     {
