@@ -2,7 +2,7 @@
 
 import {
   Check, X, Calculator, FileDown, Settings2, Info, XCircle,
-  Plus, Trash2, User2, Wallet, BarChart3, FileText, Download
+  Plus, Trash2, User2, Wallet, BarChart3, FileText, Download, Send
 } from "lucide-react";
 import React, { JSX, useMemo, useState } from "react";
 // import {
@@ -11,8 +11,9 @@ import React, { JSX, useMemo, useState } from "react";
 // import { Check, X, Calculator, FileDown, Settings2, Info, XCircle, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
-import { customers } from "@/components/data/customers"
+import { customers } from "@/components/data/approvekpr"
 import { Button } from "@/components/ui/button"
+import AssignApprovalDialog from "@/components/dialogs/AssignTo";
 // import jsPDF from "jspdf"
 // import html2canvas from "html2canvas"
 
@@ -798,6 +799,8 @@ export default function ApprovalDetailMockup(): JSX.Element {
                 ))}
               </div>
             </div>
+          <AssignApprovalDialog />
+
 
           </div>
 
@@ -875,6 +878,7 @@ export default function ApprovalDetailMockup(): JSX.Element {
               </div>
             </div>
           </div>
+
         </section>
 
         <section className="grid lg:grid-cols-3 gap-6">
@@ -908,6 +912,8 @@ export default function ApprovalDetailMockup(): JSX.Element {
 
         {/* Actions */}
         <section className="flex flex-wrap gap-3 justify-end">
+
+
           <button
             onClick={() => router.push('/confirm?action=reject')}
             className="flex items-center gap-2 px-5 py-3 rounded-2xl font-medium text-white shadow hover:bg-red-600 transition-colors"

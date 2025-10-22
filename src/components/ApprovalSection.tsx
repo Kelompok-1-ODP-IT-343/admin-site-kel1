@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { customers, Customer } from "@/components/data/customers"
+import { customers, Customer } from "@/components/data/approvekpr"
 // import { ArrowUpIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Calculator, Settings2 } from "lucide-react"
