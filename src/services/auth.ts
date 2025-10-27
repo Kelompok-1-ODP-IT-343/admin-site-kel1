@@ -1,63 +1,35 @@
-import coreApi from "@/lib/coreApi";
-
-export type LoginPayload = {
-  username?: string;
-  email?: string;
+// src/services/auth.ts
+export async function loginBlueprint({
+  identifier,
+  password,
+}: {
+  identifier: string;
   password: string;
-};
+}) {
+  try {
+    const res = await fetch("http://localhost:18080/api/v1/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ identifier, password }), // ✅ tetap pakai identifier
+    });
 
-export type AuthSuccess = {
-  success: true;
-  token: string;
-  user: { id: string; name: string; email?: string };
-};
+    const data = await res.json();
 
-export type AuthFailure = {
-  success: false;
-  message: string;
-};
-
-// Blueprint login: panggilan API asli dikomentari, return success
-export async function loginBlueprint(
-  payload: LoginPayload
-): Promise<AuthSuccess | AuthFailure> {
-  // --- Contoh panggilan API asli (dikomentari sesuai permintaan) ---
-  // try {
-  //   const res = await coreApi.post("/auth/login", payload)
-  //   const data = res.data // { token, user }
-  //   if (typeof window !== "undefined") {
-  //     localStorage.setItem("access_token", data.token)
-  //   }
-  //   return { success: true, token: data.token, user: data.user }
-  // } catch (err: any) {
-  //   const message = err?.response?.data?.message || "Login gagal"
-  //   return { success: false, message }
-  // }
-  let _ = coreApi;
-
-  _ = _;
-
-  // --- Blueprint (dummy) ---
-  const mockToken = "demo-token";
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("access_token", mockToken);
-      localStorage.setItem(
-        "user_name",
-        payload.username || payload.email || "Demo User"
-      );
-    } catch (_) {
-      // abaikan jika localStorage tidak tersedia
+    // Periksa apakah request berhasil
+    if (!res.ok || !data.success) {
+      return { success: false, message: data.message || "Login gagal" };
     }
-  }
 
-  return {
-    success: true,
-    token: mockToken,
-    user: {
-      id: "0",
-      name: payload.username || "Demo User",
-      email: payload.email,
-    },
-  };
+    // ✅ Simpan token ke cookie biar bisa dibaca middleware
+    if (data.data?.token) {
+      document.cookie = `token=${data.data.token}; path=/; max-age=86400;`;
+    }
+
+    return { success: true, data: data.data };
+  } catch (error) {
+    console.error("Login error:", error);
+    return { success: false, message: "Gagal terhubung ke server" };
+  }
 }
