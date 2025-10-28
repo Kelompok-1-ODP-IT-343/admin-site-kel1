@@ -2,7 +2,7 @@
 
 import {
   Check, X, Calculator, FileDown, Settings2, Info, XCircle,
-  Plus, Trash2, User2, Wallet, BarChart3, FileText, Download, Send
+  Plus, Trash2, User2, Wallet, BarChart3, FileText, Download, Send, Eye
 } from "lucide-react";
 import React, { JSX, useMemo, useState } from "react";
 // import {
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import AssignApprovalDialog from "@/components/dialogs/AssignTo";
 // import jsPDF from "jspdf"
 // import html2canvas from "html2canvas"
-
+import ViewDocumentDialog from "@/components/dialogs/ViewDocumentDialog";
 
 
 // ----- Types -----
@@ -52,6 +52,8 @@ export default function ApprovalDetailMockup(): JSX.Element {
   const phone = customer?.phone || "-";
 
 
+  const [openKtp, setOpenKtp] = useState(false);
+  const [openSlip, setOpenSlip] = useState(false);
 
   // const [loanAmount, setLoanAmount] = useState<number>(850_000_000);
   // const [tenor, setTenor] = useState<number>(240);
@@ -575,56 +577,47 @@ export default function ApprovalDetailMockup(): JSX.Element {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* KTP */}
-              <div className="border rounded-xl p-4 shadow-sm bg-gray-50 flex flex-col items-center">
-                {customer.ktp ? (
-                  <>
-                    <img
-                      src={customer.ktp}
-                      alt="KTP"
-                      className="w-full max-w-[400px] h-auto rounded-lg border object-cover"
-                      style={{ borderColor: colors.gray + "33" }}
-                    />
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="mt-3 text-[#0B63E5] border-[#0B63E5]/60 hover:bg-[#0B63E5]/10 font-semibold shadow-sm"
-                    >
-                      <a href={customer.ktp} download>
-                        <FileDown className="mr-2 h-4 w-4" /> Download KTP
-                      </a>
-                    </Button>
-
-                  </>
-                ) : (
-                  <p className="text-sm text-gray-500 italic">Belum ada foto KTP</p>
-                )}
+              <div className="border rounded-xl p-5 shadow-sm bg-gray-50 flex items-center justify-between">
+                <p className="font-semibold text-gray-800 text-base">
+                  Kartu Tanda Penduduk (KTP)
+                </p>
+                <Button
+                  onClick={() => setOpenKtp(true)}
+                  variant="outline"
+                  className="text-[#0B63E5] border-[#0B63E5]/60 hover:bg-[#0B63E5]/10 font-semibold shadow-sm"
+                >
+                  <Eye className="mr-2 h-4 w-4" /> Lihat KTP
+                </Button>
               </div>
 
               {/* Slip Gaji */}
-              <div className="border rounded-xl p-4 shadow-sm bg-gray-50 flex flex-col items-center">
-                {customer.slip ? (
-                  <>
-                    <img
-                      src={customer.slip}
-                      alt="Slip Gaji"
-                      className="w-full max-w-[400px] h-auto rounded-lg border object-cover"
-                      style={{ borderColor: colors.gray + "33" }}
-                    />
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="mt-3 text-[#0B63E5] border-[#0B63E5]/60 hover:bg-[#0B63E5]/10 font-semibold shadow-sm"
-                    >
-                      <a href={customer.ktp} download>
-                        <FileDown className="mr-2 h-4 w-4" /> Download Slip Gaji
-                      </a>
-                    </Button>
-                  </>
-                ) : (
-                  <p className="text-sm text-gray-500 italic">Belum ada foto slip gaji</p>
-                )}
+              <div className="border rounded-xl p-5 shadow-sm bg-gray-50 flex items-center justify-between">
+                <p className="font-semibold text-gray-800 text-base">
+                  Slip Gaji
+                </p>
+                <Button
+                  onClick={() => setOpenSlip(true)}
+                  variant="outline"
+                  className="text-[#0B63E5] border-[#0B63E5]/60 hover:bg-[#0B63E5]/10 font-semibold shadow-sm"
+                >
+                  <Eye className="mr-2 h-4 w-4" /> Lihat Slip Gaji
+                </Button>
               </div>
             </div>
+            
+            {/* Dialogs */}
+            <ViewDocumentDialog
+              open={openKtp}
+              onOpenChange={setOpenKtp}
+              title="Kartu Tanda Penduduk"
+              imageUrl={customer.ktp || null}
+            />
+            <ViewDocumentDialog
+              open={openSlip}
+              onOpenChange={setOpenSlip}
+              title="Slip Gaji"
+              imageUrl={customer.slip || null}
+            />
           </section>
         )}
 

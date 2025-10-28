@@ -194,26 +194,51 @@ export default function DeveloperTable() {
                 <DropdownMenuItem
                   onClick={async () => {
                     try {
-                      // Fetch detail developer
                       const res = await getDeveloperById(developer.id);
                       const detail = res?.data ?? res;
 
-                      // Format JSON rapi (2 spasi indent)
-                      const formatted = JSON.stringify(detail, null, 2);
+                      // format teks agar mudah dibaca (multi-baris)
+                      const formatted = `
+                🏢 *${detail.companyName}* (${detail.companyCode})
+                📜 Business License: ${detail.businessLicense}
+                🏗️ Developer License: ${detail.developerLicense}
 
-                      // Copy ke clipboard
-                      await navigator.clipboard.writeText(formatted);
+                👤 Contact Person: ${detail.contactPerson}
+                📞 Phone: ${detail.phone}
+                ✉️ Email: ${detail.email}
+                🌐 Website: ${detail.website}
 
-                      console.log(`Copied details for ${developer.companyName}`);
-                      alert("Developer details copied to clipboard!");
+                📍 Address: ${detail.address}
+                🏙️ City: ${detail.city}
+                🏞️ Province: ${detail.province}
+                📮 Postal Code: ${detail.postalCode}
+
+                📆 Established: ${detail.establishedYear}
+                📋 Description: ${detail.description}
+
+                🏠 Specialization: ${detail.specialization}
+                🤝 Partnership Level: ${detail.partnershipLevel}
+                💰 Commission Rate: ${detail.commissionRate * 100}%
+                📈 Status: ${detail.status}
+
+                🕓 Verified At: ${detail.verifiedAt ?? "-"}
+                👤 Verified By: ${detail.verifiedBy ?? "-"}
+                🕒 Created At: ${detail.createdAt}
+                🔄 Updated At: ${detail.updatedAt}
+                `;
+
+                      await navigator.clipboard.writeText(formatted.trim());
+
+                      alert("Developer detail berhasil disalin ke clipboard!");
                     } catch (err) {
-                      console.error("Failed to copy developer details:", err);
+                      console.error("Gagal copy developer detail:", err);
                       alert("Gagal menyalin developer detail.");
                     }
                   }}
                 >
                   Copy Developer Detail
                 </DropdownMenuItem>
+
 
                 {/* <DropdownMenuItem
                   onClick={() => console.log("Inactive", developer.id)}
