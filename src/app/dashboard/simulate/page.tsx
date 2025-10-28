@@ -38,11 +38,27 @@ type RateSegment = {
   label?: string
 };
 
+
 // ----- Component -----
 export default function ApprovalDetailMockup(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
+  
+  // --- FICO score (seeded by URL id) ---
+  const idNum = parseInt(searchParams.get("id") ?? "1", 10);
+
+  const seededRandom = (seed: number): number => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const score: number = Math.floor(300 + seededRandom(idNum) * 550);
+  const scoreLabel =
+    score >= 740 ? "Excellent" :
+    score >= 670 ? "Good" :
+    score >= 580 ? "Fair" :
+    "Poor";
 
   // cari customer berdasarkan ID
   const customer = customers.find(c => c.id === id);
@@ -433,14 +449,83 @@ export default function ApprovalDetailMockup(): JSX.Element {
             <h3 className="font-semibold text-black text-lg">Rp{loanAmount.toLocaleString("id-ID")}</h3>
             <p>Tenor {tenor} bulan</p>
           </div>
-          <div className="p-5 rounded-2xl shadow-sm border flex flex-col" style={{ borderColor: colors.gray + "33" }}>
-            <div className="flex items-center gap-2 mb-1">
+          {/* FICO */}
+          <div
+            className="p-5 rounded-2xl shadow-sm border flex flex-col"
+            style={{ borderColor: colors.gray + "33" }}
+          >
+            {/* === Header kiri === */}
+            <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="h-7 w-7" color={colors.blue} />
-              <p className="text-xs">Ringkasan Simulasi</p>
+              <p className="text-xs font-medium">FICO® Score</p>
             </div>
-            <p>Total Bunga: <span className="font-semibold text-black">Rp{roundIDR(totalInterest).toLocaleString("id-ID")}</span></p>
-            <p>Total Pembayaran: <span className="font-semibold text-black">Rp{roundIDR(totalPayment).toLocaleString("id-ID")}</span></p>
+
+            {/* === Gauge tetap center === */}
+            <div className="flex justify-center">
+              <div className="relative w-40 h-20">
+                <svg viewBox="0 0 100 50" className="w-full h-full">
+                  {/* Background arc */}
+                  <path
+                    d="M10 50 A40 40 0 0 1 90 50"
+                    fill="none"
+                    stroke="#E5E7EB"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                  />
+                  {/* Colored arc */}
+                  <path
+                    d="M10 50 A40 40 0 0 1 90 50"
+                    fill="none"
+                    stroke={
+                      score <= 560 ? "#EF4444" :
+                      score <= 650 ? "#F97316" :
+                      score <= 700 ? "#EAB308" :
+                      score <= 750 ? "#3B82F6" :
+                      "#22C55E"
+                    }
+                    strokeWidth="8"
+                    strokeDasharray={`${((score - 300) / 550) * 126} 126`}
+                    strokeLinecap="round"
+                  />
+
+                  {/* Text inside gauge */}
+                  <text
+                    x="50"
+                    y="32"
+                    textAnchor="middle"
+                    fontSize="14"
+                    fontWeight="800"
+                    fill="#111827"
+                  >
+                    {score}
+                  </text>
+                  <text
+                    x="50"
+                    y="44"
+                    textAnchor="middle"
+                    fontSize="7"
+                    fontWeight="600"
+                    fill={
+                      score <= 560 ? "#dc2626" :
+                      score <= 650 ? "#ea580c" :
+                      score <= 700 ? "#ca8a04" :
+                      score <= 750 ? "#2563eb" :
+                      "#16a34a"
+                    }
+                  >
+                    {score <= 560 ? "Very Bad" :
+                    score <= 650 ? "Bad" :
+                    score <= 700 ? "Fair" :
+                    score <= 750 ? "Good" :
+                    "Excellent"}
+                  </text>
+                </svg>
+              </div>
+            </div>
           </div>
+
+
+
         </section>
 
         {/* === Detail Customer === */}

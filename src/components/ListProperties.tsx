@@ -27,7 +27,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, ChevronDown } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { properties, Property } from "@/components/data/properties"
+// import { properties, Property } from "@/components/data/properties"
+// import { getAdminProperties } from "@/services/properties"
+// import { getAdminProperties, Property } from "@/services/properties"
+import { Property, getAdminProperties } from "@/services/properties"
+
+
 
 // lazy load dialog biar ga render berat
 const PropertyDetailsDialog = React.lazy(
@@ -35,18 +40,32 @@ const PropertyDetailsDialog = React.lazy(
 )
 
 export default function PropertiesList() {
+  const [data, setData] = React.useState<Property[]>([])
+  const [loading, setLoading] = React.useState(true)
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [filter, setFilter] = React.useState("")
   const [selectedProperty, setSelectedProperty] = React.useState<Property | null>(null)
   const [showDialog, setShowDialog] = React.useState(false)
+  
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const result = await getAdminProperties()
+      if (result.success) {
+        setData(result.data)
+      }
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
 
   // filter berdasarkan title
-  const filteredData = React.useMemo(() => {
-    const data = properties.filter((p) =>
-      p.title.toLowerCase().includes(filter.toLowerCase())
-    )
-    return data.slice(0, 10)
-  }, [filter])
+const filteredData = React.useMemo(() => {
+  return data.filter((p) =>
+    p.title.toLowerCase().includes(filter.toLowerCase())
+  )
+}, [data, filter])
+
+
 
   const handleDetails = (property: Property) => {
     setSelectedProperty(property)
@@ -72,9 +91,9 @@ export default function PropertiesList() {
       cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
     },
     {
-      accessorKey: "company_name",
+      accessorKey: "developer_name",
       header: () => <div className="font-semibold">Developer</div>,
-      cell: ({ row }) => <div>{row.getValue("company_name")}</div>,
+      cell: ({ row }) => <div>{row.getValue("developer_name")}</div>,
     },
     {
       accessorKey: "address",
@@ -143,11 +162,17 @@ export default function PropertiesList() {
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: { sorting },
   })
 
+  if (loading) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Loading Properties...
+      </div>
+    )
+  }
   return (
     <div className="w-full">
       {/* Filter Input */}
@@ -201,25 +226,7 @@ export default function PropertiesList() {
         </Table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-      </div>
+
 
       {/* Lazy Loaded Dialog */}
       {showDialog && (

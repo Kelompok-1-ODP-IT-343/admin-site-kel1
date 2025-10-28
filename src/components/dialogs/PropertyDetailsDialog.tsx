@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Property } from "@/components/data/properties";
+import { Property, updateProperty } from "@/services/properties";
 
 export default function ViewPropertyDialog({
   open,
@@ -27,10 +27,15 @@ export default function ViewPropertyDialog({
     setEditedData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    console.log("Updated Property Data:", editedData);
-    setIsEditing(false);
-  };
+  const handleSave = async () => {
+    try {
+      const result = await updateProperty(editedData.id, editedData);
+      console.log("✅ Updated:", result);
+      setIsEditing(false);
+    } catch (err) {
+      console.error("❌ Gagal update:", err);
+    }
+};
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,7 +89,7 @@ export default function ViewPropertyDialog({
               {/* Info Ringkas */}
               <div className="rounded-lg border bg-muted/30 p-4 text-sm grid grid-cols-2 gap-y-2">
                 {[
-                  ["Developer", "company_name"],
+                  ["Developer", "developer_name"],
                   ["Tipe", "property_type"],
                   ["Harga", "price"],
                   ["Harga/m²", "price_per_sqm"],

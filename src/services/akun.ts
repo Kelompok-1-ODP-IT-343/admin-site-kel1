@@ -1,3 +1,5 @@
+const baseUrl = ""
+
 export async function getUserProfile() {
   try {
     // Ambil token dari cookie
