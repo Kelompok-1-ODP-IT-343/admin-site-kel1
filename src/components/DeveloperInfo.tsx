@@ -14,6 +14,7 @@ import {
   VisibilityState,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal, Settings2 } from "lucide-react"
+import { updateDeveloperStatus, getDeveloperById } from "@/services/developers";
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -34,18 +35,85 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-import { developers, DeveloperDetail } from "@/components/data/developers"
-import ViewDeveloperDialog from "@/components/dialogs/ViewDevelopersDialog"
+// import { developers, DeveloperDetail } from "@/components/data/developers" DUMMY
+import { UiDeveloper, apiToUi } from "@/lib/developer-mapper";
 
+
+import ViewDeveloperDialog from "@/components/dialogs/ViewDevelopersDialog"
+type DeveloperDetail = {
+  id: string
+  companyName: string
+  companyCode: string
+  contact_person: string
+  phone: string
+  email: string
+  website: string
+  address: string
+  city: string
+  province: string
+  postal_code: string
+  established_year: string
+  description: string
+  partnership_level: string
+  logo: string
+}
 export default function DeveloperTable() {
+  const [developers, setDevelopers] = React.useState<UiDeveloper[]>([]);
+  const [loading, setLoading] = React.useState(true)
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [showDialog, setShowDialog] = React.useState(false)
-  const [selectedDeveloper, setSelectedDeveloper] = React.useState<DeveloperDetail | null>(null)
+  const [selectedDeveloper, setSelectedDeveloper] = React.useState<UiDeveloper | null>(null);
+  const [page, setPage] = React.useState(0)
+  const [totalPages, setTotalPages] = React.useState(1)
 
-  const columns: ColumnDef<DeveloperDetail>[] = [
+  React.useEffect(() => {
+    async function loadDevelopers() {
+      setLoading(true)
+
+      // ambil token dari cookie (karena saat login kamu set pakai document.cookie)
+      const token =
+        typeof document !== "undefined"
+          ? document.cookie.split("; ").find(c => c.startsWith("token="))?.split("=")[1]
+          : null
+
+      // DEBUG: pastikan kelihatan di console
+      console.log("🔐 token:", token?.slice(0, 20) + "...")
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_HOST}/api/v1/admin/developers?page=${page}&size=10`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}), // << WAJIB
+          },
+          credentials: "include", // << kirim cookie juga
+          cache: "no-store",
+        }
+      )
+
+      if (res.status === 401) {
+        console.warn("❌ 401 Unauthorized — token tidak terkirim/invalid")
+        setDevelopers([])
+        setTotalPages(1)
+        setLoading(false)
+        return
+      }
+
+      const json = await res.json()
+      setDevelopers(json?.data?.data ?? [])
+      setTotalPages(json?.data?.pagination?.totalPages ?? 1)
+      setLoading(false)
+    }
+
+    loadDevelopers()
+  }, [page])
+
+
+  const columns: ColumnDef<UiDeveloper>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -69,9 +137,9 @@ export default function DeveloperTable() {
       enableHiding: false,
     },
     {
-      accessorKey: "company_name",
+      accessorKey: "companyName",
       header: () => <div className="font-semibold">Developer</div>,
-      cell: ({ row }) => <div className="capitalize">{row.getValue("company_name")}</div>,
+      cell: ({ row }) => <div className="capitalize">{row.getValue("companyName")}</div>,
     },
     {
       accessorKey: "email",
@@ -124,16 +192,63 @@ export default function DeveloperTable() {
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  onClick={() => navigator.clipboard.writeText(developer.id)}
+                  onClick={async () => {
+                    try {
+                      // Fetch detail developer
+                      const res = await getDeveloperById(developer.id);
+                      const detail = res?.data ?? res;
+
+                      // Format JSON rapi (2 spasi indent)
+                      const formatted = JSON.stringify(detail, null, 2);
+
+                      // Copy ke clipboard
+                      await navigator.clipboard.writeText(formatted);
+
+                      console.log(`Copied details for ${developer.companyName}`);
+                      alert("Developer details copied to clipboard!");
+                    } catch (err) {
+                      console.error("Failed to copy developer details:", err);
+                      alert("Gagal menyalin developer detail.");
+                    }
+                  }}
                 >
-                  Copy Developer ID
+                  Copy Developer Detail
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => console.log("Delete", developer.id)}
+
+                {/* <DropdownMenuItem
+                  onClick={() => console.log("Inactive", developer.id)}
                   className="text-red-500 focus:text-red-600"
                 >
-                  Delete
+                  Inactive
+                </DropdownMenuItem> */}
+                <DropdownMenuItem
+                  onClick={async () => {
+                    try {
+                      const newStatus = developer.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+                      const res = await updateDeveloperStatus(developer.id, newStatus);
+                      
+                      // update state list agar status langsung berubah di UI
+                      setDevelopers(prev =>
+                        prev.map(d =>
+                          d.id === developer.id ? { ...d, status: newStatus } : d
+                        )
+                      );
+
+                      console.log(`✅ Developer ${developer.companyName} set to ${newStatus}`);
+                    } catch (err) {
+                      console.error("Gagal update status:", err);
+                      alert("Gagal mengubah status developer.");
+                    }
+                  }}
+                  className={`${
+                    developer.status === "ACTIVE"
+                      ? "text-red-500 focus:text-red-600"
+                      : "text-green-600 focus:text-green-700"
+                  }`}
+                >
+                  {developer.status === "ACTIVE" ? "Inactive" : "Active"}
                 </DropdownMenuItem>
+
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -155,6 +270,14 @@ export default function DeveloperTable() {
     onRowSelectionChange: setRowSelection,
     state: { sorting, columnFilters, columnVisibility, rowSelection },
   })
+
+  if (loading) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Loading developers...
+      </div>
+    )
+  }
 
   return (
     <div className="w-full">
@@ -269,13 +392,40 @@ export default function DeveloperTable() {
             )}
           </TableBody>
         </Table>
+        <div className="flex items-center justify-between p-4">
+          <Button
+            variant="outline"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
+            Previous
+          </Button>
+
+          <span className="text-sm text-muted-foreground">
+            Page {page + 1} of {totalPages}
+          </span>
+
+          <Button
+            variant="outline"
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
+        </div>
+
       </div>
 
       <ViewDeveloperDialog
         open={showDialog}
         onOpenChange={setShowDialog}
         developer={selectedDeveloper}
+        onUpdated={(upd) => {
+          // replace item di state list
+          setDevelopers(prev => prev.map(d => (d.id === upd.id ? upd : d)));
+        }}
       />
+
     </div>
   )
 }
