@@ -24,6 +24,9 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
+import { getUserProfile } from "@/services/akun";
+import { usePathname } from "next/navigation";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -48,18 +51,50 @@ const COLORS = {
   lime: "#DDEE59",
 };
 type Section = "settings" | "notifications" | "help";
+function getAvatarColor(name: string): string {
+  const colors = [
+    "#3FD8D4", // BNI teal
+    "#FF8500", // BNI orange
+    "#0B63E5", // BNI blue
+    "#DDEE59", // lime accent
+    "#6C63FF", // purple
+    "#00C49F", // emerald
+  ];
+  // Ambil warna berdasarkan kode unik nama
+  const index = name
+    .split("")
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0) % colors.length;
+  return colors[index];
+}
 
 export default function AkunPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [active, setActive] = useState<Section>("settings");
-
+  const [user, setUser] = useState<any>(null); 
+  const pathname = usePathname();
+  
   useEffect(() => {
-    const tab = (searchParams.get("tab") || "").toLowerCase();
-    if (tab === "settings" || tab === "notifications" || tab === "help") {
-      setActive(tab as Section);
-    }
-  }, [searchParams]);
+    const fetchProfile = async () => {
+      try {
+        console.log("🟡 Fetching user profile...");
+        const data = await getUserProfile();
+        console.log("✅ Response data:", data);
+        setUser(data);
+      } catch (err) {
+        console.error("❌ Error saat ambil profil:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+
+  if (!user)
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        Loading profile...
+      </div>
+    );
 
   const goLogout = () => router.push("/");
   const goBack = () => router.push("/dashboard");
@@ -94,19 +129,52 @@ export default function AkunPage() {
           <aside className="md:col-span-4 lg:col-span-3">
             <div className="rounded-2xl bg-white border shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-5 border-b">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                  <Image
-                    src="/images/avatars/cecilion.png"
-                    alt="Admin Ahong"
-                    fill
-                    className="object-cover"
-                  />
+                <div className="flex items-center gap-3 px-5 py-5 border-b">
+                  {/* Avatar */}
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden flex items-center justify-center font-bold text-white uppercase select-none shadow-sm">
+                    {user?.imageUrl ? (
+                      <Image
+                        src={user.imageUrl}
+                        alt={user.fullName || "User profile picture"}
+                        fill
+                        className="object-cover rounded-full"
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center"
+                        style={{
+                          backgroundColor: getAvatarColor(user?.fullName || user?.roleName || "Default"),
+                        }}
+                      >
+                        {(
+                          (user?.fullName || user?.name || user?.roleName || "U")
+                            .split(" ")
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map((w: string) => w[0])
+                            .join("")
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* User Info */}
+                  <div className="flex flex-col">
+                    <h3 className="!text-sm !font-medium text-gray-900 leading-tight">
+                      {user?.fullName || user?.name || "-"}
+                    </h3>
+                    <p className="!text-[10px] text-gray-500 truncate max-w-[120px]">
+                      {user?.email || "-"}
+                    </p>
+                  </div>
                 </div>
+
+
                 <div>
                   <h3 className="font-semibold text-gray-900 leading-tight">
-                    Admin Ahong
+                    {user.name}
                   </h3>
-                  <p className="text-xs text-gray-500 -mt-0.5">Administrator</p>
+                  <p className="text-xs text-gray-500 -mt-0.5">{user.role}</p>
                 </div>
               </div>
 
@@ -115,19 +183,30 @@ export default function AkunPage() {
                 active={active === "settings"}
                 title="Account Settings"
                 icon={<Settings className="h-5 w-5" />}
-                onClick={() => router.push("/akun?tab=settings")}
+                onClick={() => {
+                  setActive("settings");
+                  router.replace("/akun?tab=settings");
+                }}
               />
+
               <SidebarItem
                 active={active === "notifications"}
                 title="Notifications"
                 icon={<Bell className="h-5 w-5" />}
-                onClick={() => router.push("/akun?tab=notifications")}
+                onClick={() => {
+                  setActive("notifications");
+                  router.replace("/akun?tab=notifications");
+                }}
               />
+
               <SidebarItem
                 active={active === "help"}
                 title="Help"
                 icon={<HelpCircle className="h-5 w-5" />}
-                onClick={() => router.push("/akun?tab=help")}
+                onClick={() => {
+                  setActive("help");
+                  router.replace("/akun?tab=help");
+                }}
               />
 
               <div className="h-px bg-gray-100 mx-4" />
@@ -148,7 +227,7 @@ export default function AkunPage() {
           {/* CONTENT */}
           <section className="md:col-span-8 lg:col-span-9">
             <div className="rounded-2xl bg-white border shadow-sm p-6 space-y-12">
-              {active === "settings" && <SettingsContent />}
+              {active === "settings" && user && <SettingsContent user={user} />}
               {active === "notifications" && <NotificationsContent />}
               {active === "help" && <HelpContent />}
             </div>
@@ -200,7 +279,7 @@ function SidebarItem({
 }
 
 /* Content */
-function SettingsContent() {
+function SettingsContent({ user }: { user: any }) {
   return (
     <div className="akun w-full">
       <Tabs defaultValue="account" className="w-full">
@@ -222,33 +301,53 @@ function SettingsContent() {
             <CardContent className="grid gap-6 md:grid-cols-2">
               <div className="grid gap-3">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" defaultValue="Admin Ahong" />
+                <Input id="name" defaultValue={user?.fullName || ""} />
               </div>
 
               <div className="grid gap-3">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="admin@satuatap.com" />
+                <Input id="email" type="email" defaultValue={user?.email || ""} />
               </div>
 
               <div className="grid gap-3">
                 <Label htmlFor="username">Username</Label>
-                <Input id="username" defaultValue="ahong123" />
+                <Input id="username" defaultValue={user?.username || ""} />
               </div>
 
               <div className="grid gap-3">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" defaultValue="+62 812 3456 7890" />
+                <Input id="phone" defaultValue={user?.phone || "-"} />
               </div>
 
               <div className="grid gap-3">
-                <Label htmlFor="position">Position</Label>
-                <Input id="position" defaultValue="Administrator" />
+                <Label htmlFor="department">Position</Label>
+                <Input
+                  id="department"
+                  readOnly
+                  className="bg-gray-50 cursor-not-allowed"
+                  defaultValue={user?.roleName || "-"}
+                />
               </div>
 
               <div className="grid gap-3">
-                <Label htmlFor="department">Department</Label>
-                <Input id="department" defaultValue="Digital Lending Division" />
+                <Label htmlFor="lastUpdate">Last Update</Label>
+                <Input
+                  id="lastUpdate"
+                  readOnly
+                  className="bg-gray-50 cursor-not-allowed"
+                  defaultValue={
+                    user?.updatedAt
+                      ? new Date(user.updatedAt).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "-"
+                  }
+                />
               </div>
+
+
             </CardContent>
 
             <CardFooter>

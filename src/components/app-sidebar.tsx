@@ -1,5 +1,6 @@
 "use client"
 
+import { getUserProfile } from "@/services/akun";
 import {
   Sidebar,
   SidebarContent,
@@ -37,6 +38,8 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 
+import { useEffect, useState } from "react";
+
 // Menu dengan ikon sesuai nama
 const menuItems = [
   { name: "Home", icon: Home },
@@ -50,8 +53,34 @@ const menuItems = [
 
 ]
 
+function getAvatarColor(name: string): string {
+  const colors = [
+    "#3FD8D4", // teal
+    "#FF8500", // orange
+    "#0B63E5", // blue
+    "#DDEE59", // lime
+    "#00C49F", // emerald
+  ];
+  const index =
+    name.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+    colors.length;
+  return colors[index];
+}
+
+
+
+
 export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
   const router = useRouter()
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const data = await getUserProfile();
+      setUser(data);
+    };
+    fetchProfile();
+  }, []);
 
   return (
     <Sidebar collapsible="icon">
@@ -97,7 +126,7 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
       </SidebarContent>
 
       {/* === PROFILE DROPDOWN === */}
-      <SidebarFooter className="pb-4">
+      {/* <SidebarFooter className="pb-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors">
@@ -172,7 +201,127 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </SidebarFooter> */}
+      <SidebarFooter className="pb-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors">
+              <div className="flex items-center gap-3 overflow-hidden">
+                {/* === Avatar === */}
+                {user?.imageUrl ? (
+                  <Image
+                    src={user.imageUrl}
+                    alt={user.fullName || "User"}
+                    width={32}
+                    height={32}
+                    className="rounded-full flex-shrink-0"
+                  />
+                ) : (
+                  <div
+                    className="w-8 h-8 flex items-center justify-center rounded-full text-white text-xs font-semibold shadow-sm"
+                    style={{
+                      backgroundColor: getAvatarColor(user?.fullName || user?.roleName || "U"),
+                    }}
+                  >
+                    {user?.fullName
+                      ? user.fullName
+                          .split(" ")
+                          .slice(0, 2)
+                          .map((w: string) => w[0])
+                          .join("")
+                          .toUpperCase()
+                      : "U"}
+                  </div>
+                )}
+
+                {/* === User Info === */}
+                <div className="flex flex-col text-left truncate">
+                  <span className="text-xs font-medium text-sidebar-foreground truncate">
+                    {user?.fullName || "-"}
+                  </span>
+                  <span className="text-[10px] text-gray-400 truncate">
+                    {user?.email || "-"}
+                  </span>
+                </div>
+              </div>
+
+              <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            </button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent side="right" align="start" className="w-56">
+            <DropdownMenuLabel>
+              <div className="flex items-start gap-2">
+                {user?.imageUrl ? (
+                  <Image
+                    src={user.imageUrl}
+                    alt="Profile"
+                    width={36}
+                    height={36}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div
+                    className="w-9 h-9 flex items-center justify-center rounded-full text-white text-xs font-semibold shadow-sm"
+                    style={{
+                      backgroundColor: getAvatarColor(user?.fullName || user?.roleName || "U"),
+                    }}
+                  >
+                    {user?.fullName
+                      ? user.fullName
+                          .split(" ")
+                          .slice(0, 2)
+                          .map((w: string) => w[0])
+                          .join("")
+                          .toUpperCase()
+                      : "U"}
+                  </div>
+                )}
+
+                {/* ubah bagian text ini */}
+                <div
+                  className="text-gray-700"
+                  style={{ lineHeight: "1", margin: "0", padding: "0" }}
+                >
+                  <p style={{ margin: 0, padding: 0, lineHeight: "1", fontSize: "12px" }}>
+                    <span style={{ fontWeight: 600, color: "#374151" }}>
+                      {user?.fullName || "-"}
+                    </span>
+                  </p>
+                  <p style={{ margin: 0, padding: 0, lineHeight: "1", fontSize: "12px", color: "#4b5563" }}>
+                    {user?.roleName || "Administrator"}
+                  </p>
+                  <p style={{ margin: 0, padding: 0, lineHeight: "1", fontSize: "12px", color: "#6b7280" }}>
+                    {user?.email || "-"}
+                  </p>
+                </div>
+              </div>
+            </DropdownMenuLabel>
+
+
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push("/akun?tab=settings")}>
+              <Settings className="mr-2 h-4 w-4" /> Account Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/akun?tab=notifications")}>
+              <Bell className="mr-2 h-4 w-4" /> Notifications
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/akun?tab=help")}>
+              <HelpCircle className="mr-2 h-4 w-4" /> Help
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={onLogout}
+              className="text-red-500 focus:text-red-500"
+            >
+              <LogOut className="mr-2 h-4 w-4" /> Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
+
+
     </Sidebar>
   )
 }
