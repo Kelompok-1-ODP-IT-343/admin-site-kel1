@@ -1,0 +1,36 @@
+import { Customer } from "@/components/data/customers";
+
+export function apiToUi(apiData: any): Customer {
+  return {
+    id: apiData.id?.toString() ?? "null",
+    name: apiData.fullName ?? "null",
+    username: apiData.username ?? "null",
+    email: apiData.email ?? "null",
+    phone: apiData.phone ?? "null",
+    nik: apiData.nik ?? "null",
+    npwp: apiData.npwp ?? "null",
+    birth_date: apiData.birthDate ?? "null",
+    birth_place: apiData.birthPlace ?? "null",
+    gender: apiData.gender ?? "null",
+    marital_status: apiData.maritalStatus ?? "null",
+    address: apiData.address ?? "null",
+    sub_district: "null",
+    district: "null",
+    city: apiData.city ?? "null",
+    province: apiData.province ?? "null",
+    postal_code: apiData.postalCode ?? "null",
+    ktp: "null",
+    slip: "null",
+    credit_score: 1,
+    credit_status: "Lancar",
+    occupation: apiData.occupation ?? "null",
+    company_postal_code: "null",
+    company_name: apiData.companyName ?? "null",
+    company_address: "null",
+    company_district: "null",
+    company_subdistrict: "null",
+    company_city: "null",
+    company_province: "null",
+    monthly_income: apiData.monthlyIncome?.toString() ?? "null",
+  };
+}

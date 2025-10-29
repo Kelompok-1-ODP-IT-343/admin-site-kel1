@@ -417,27 +417,7 @@ export default function DeveloperTable() {
             )}
           </TableBody>
         </Table>
-        <div className="flex items-center justify-between p-4">
-          <Button
-            variant="outline"
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            Previous
-          </Button>
 
-          <span className="text-sm text-muted-foreground">
-            Page {page + 1} of {totalPages}
-          </span>
-
-          <Button
-            variant="outline"
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </div>
 
       </div>
 

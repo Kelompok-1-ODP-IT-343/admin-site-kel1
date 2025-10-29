@@ -32,10 +32,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { customers, Customer } from "@/components/data/customers"
+import { Customer } from "@/components/data/customers"
+import { getAllUsers } from "@/services/customers"
+import { apiToUi } from "@/lib/customer-mapper"
+
 import ViewCustomerDialog from "@/components/dialogs/ViewCustomerDialogs"
 
 export default function CustomerTableDemo() {
+  const [data, setData] = React.useState<Customer[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchUsers() {
+      setLoading(true);
+      const apiUsers = await getAllUsers();
+      const mappedUsers = apiUsers.map((u: any) => apiToUi(u));
+      setData(mappedUsers);
+      setLoading(false);
+    }
+    fetchUsers();
+  }, []);
+
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -143,7 +160,7 @@ export default function CustomerTableDemo() {
   ]
 
   const table = useReactTable({
-    data: customers,
+    data,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -219,46 +236,54 @@ export default function CustomerTableDemo() {
               </TableRow>
             ))}
           </TableHeader>
-
           <TableBody>
-            {table.getRowModel().rows.length ? (
-              table
-                .getRowModel()
-                .rows.map((row, index) => (
-                  <TableRow
-                    key={row.id}
-                    className="hover:bg-muted/30 transition-colors duration-150 divide-x divide-border"
-                  >
-                    {/* Kolom nomor urut */}
-                    <TableCell className="py-3 px-4 text-sm font-medium text-center w-[60px]">
-                      {index + 1}
-                    </TableCell>
+            {loading ? (
+              // Kalau masih loading
+              <TableRow>
+                <TableCell
+                  colSpan={table.getAllColumns().length + 1}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  Loading data...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length ? (
+              // Kalau udah ada data
+              table.getRowModel().rows.map((row, index) => (
+                <TableRow
+                  key={row.id}
+                  className="hover:bg-muted/30 transition-colors duration-150 divide-x divide-border"
+                >
+                  {/* Kolom nomor urut */}
+                  <TableCell className="py-3 px-4 text-sm font-medium text-center w-[60px]">
+                    {index + 1}
+                  </TableCell>
 
-                    {row
-                      .getVisibleCells()
-                      // 🔹 Hilangkan sel checkbox/select
-                      .filter((cell) => cell.column.id !== "select")
-                      .map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          style={{
-                            textAlign: cell.column.id === "actions" ? "center" : "left",
-                          }}
-                          className={`
-                            py-3 px-4 text-sm
-                            ${
-                              cell.column.id === "email"
-                                ? "text-muted-foreground"
-                                : "font-medium"
-                            }
-                          `}
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                  </TableRow>
-                ))
+                  {row
+                    .getVisibleCells()
+                    .filter((cell) => cell.column.id !== "select")
+                    .map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        style={{
+                          textAlign: cell.column.id === "actions" ? "center" : "left",
+                        }}
+                        className={`
+                          py-3 px-4 text-sm
+                          ${
+                            cell.column.id === "email"
+                              ? "text-muted-foreground"
+                              : "font-medium"
+                          }
+                        `}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                </TableRow>
+              ))
             ) : (
+              // Kalau data kosong
               <TableRow>
                 <TableCell
                   colSpan={table.getAllColumns().length + 1}
@@ -269,6 +294,7 @@ export default function CustomerTableDemo() {
               </TableRow>
             )}
           </TableBody>
+
         </Table>
       </div>
 

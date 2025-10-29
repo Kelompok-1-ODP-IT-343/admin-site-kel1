@@ -77,8 +77,8 @@ export default function AddProperties() {
       postalCode: formData.kodePos || "00000",
       district: formData.kecamatan,
       village: formData.kelurahan,
-      latitude: parseFloat(formData.koordinat.split(",")[0]) || -6.244,
-      longitude: parseFloat(formData.koordinat.split(",")[1]) || 106.829,
+      latitude: parseFloat(formData.latitude) || -6.244,
+      longitude: parseFloat(formData.longitude) || 106.829,
       landArea: parseFloat(formData.luasTanah) || 0,
       buildingArea: parseFloat(formData.luasBangunan) || 0,
       bedrooms: parseInt(formData.kamarTidur) || 0,
@@ -135,6 +135,8 @@ export default function AddProperties() {
     hargaTotal: "",
     hargaTanah: "",
     hargaBangunan: "",
+    latitude: "",
+    longitude: "",
     dp: "",
     pbb:"",
     cicilan: "",
@@ -159,7 +161,28 @@ export default function AddProperties() {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, 4))
+  const requiredFieldsByStep: Record<number, string[]> = {
+    1: ["title", "developer", "tipe", "alamat", "kota", "provinsi", "kecamatan", "kelurahan", "kodePos"],
+    2: ["hargaTotal", "sertifikat"],
+    3: ["luasTanah", "luasBangunan", "kamarTidur", "kamarMandi", "lantai", "garasi", "tahunBangun"],
+  };
+
+
+  const validateStep = () => {
+    const required = requiredFieldsByStep[step] || [];
+    for (const field of required) {
+      if (!formData[field as keyof typeof formData]) {
+        alert(`❌ Field "${field}" wajib diisi sebelum lanjut.`);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const nextStep = () => {
+    if (validateStep()) setStep((s) => Math.min(s + 1, 4));
+  };
+
   const prevStep = () => setStep((s) => Math.max(s - 1, 1))
 
 
@@ -323,18 +346,85 @@ return (
 
                 <div>
                   <Label className="mb-1.5 block">Kode Pos</Label>
-                  <Input
-                    name="kodePos"
-                    value={formData.kodePos}
-                    onChange={handleChange}
-                    placeholder="Contoh: 15310"
-                  />
+                    <Input
+                      name="kodePos"
+                      value={formData.kodePos}
+                      onChange={(e) => {
+                        const onlyNumbers = e.target.value.replace(/\D/g, ""); // hapus semua non-digit
+                        setFormData({ ...formData, kodePos: onlyNumbers });
+                      }}
+                      placeholder="Contoh: 15310"
+                      maxLength={5}
+                    />
                 </div>
               </div>
 
-              <div>
-                <Label className="mb-1.5 block">Koordinat</Label>
-                <Input name="koordinat" value={formData.koordinat} onChange={handleChange} placeholder="-6.244, 106.829" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="mb-1.5 block">Latitude</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    name="latitude"
+                    value={formData.latitude}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(",", "."); // ganti koma jadi titik
+                      // izinkan minus di awal dan hanya satu titik
+                      if (/^-?\d*(\.\d{0,8})?$/.test(val)) {
+                        setFormData({ ...formData, latitude: val });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      // hanya boleh angka, titik, minus, dan kontrol
+                      if (
+                        !/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab|\-|\./.test(e.key)
+                      ) {
+                        e.preventDefault();
+                      }
+
+                      // hanya izinkan 1 minus di depan
+                      if (e.key === "-" && e.currentTarget.selectionStart !== 0) {
+                        e.preventDefault();
+                      }
+
+                      // hanya izinkan 1 titik
+                      if (e.key === "." && e.currentTarget.value.includes(".")) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="-6.24412345"
+                  />
+                </div>
+
+                <div>
+                  <Label className="mb-1.5 block">Longitude</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    name="longitude"
+                    value={formData.longitude}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(",", ".");
+                      if (/^-?\d*(\.\d{0,8})?$/.test(val)) {
+                        setFormData({ ...formData, longitude: val });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (
+                        !/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab|\-|\./.test(e.key)
+                      ) {
+                        e.preventDefault();
+                      }
+                      if (e.key === "-" && e.currentTarget.selectionStart !== 0) {
+                        e.preventDefault();
+                      }
+                      if (e.key === "." && e.currentTarget.value.includes(".")) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="106.82900000"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -344,27 +434,67 @@ return (
             <div className="grid gap-4">
               <div>
                 <Label className="mb-1.5 block">Harga Properti (Total)</Label>
-                <Input name="hargaTotal" value={formData.hargaTotal} onChange={handleChange} placeholder="850000000" />
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  name="hargaTotal"
+                  value={formData.hargaTotal}
+                  onChange={(e) => {
+                    const onlyNumbers = e.target.value.replace(/\D/g, "");
+                    setFormData({ ...formData, hargaTotal: onlyNumbers });
+                  }}
+                  onKeyDown={(e) => {
+                    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="850000000"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="mb-1.5 block">Biaya Pemeliharaan (opsional)</Label>
                   <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     name="biayaPemeliharaan"
                     value={formData.biayaPemeliharaan}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      const onlyNumbers = e.target.value.replace(/\D/g, "");
+                      setFormData({ ...formData, biayaPemeliharaan: onlyNumbers });
+                    }}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="Contoh: 300000"
                   />
+
                 </div>
                 <div>
                   <Label className="mb-1.5 block">Nilai PBB (opsional)</Label>
                   <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     name="pbb"
                     value={formData.pbb}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      const onlyNumbers = e.target.value.replace(/\D/g, "");
+                      setFormData({ ...formData, pbb: onlyNumbers });
+                    }}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="Contoh: 2500000"
                   />
+
                 </div>
               </div>
 
@@ -396,42 +526,132 @@ return (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="mb-1.5 block">Luas Tanah (m²)</Label>
-                  <Input name="luasTanah" value={formData.luasTanah} onChange={handleChange} />
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    name="luasTanah"
+                    value={formData.luasTanah}
+                    onChange={(e) => {
+                      // Hanya angka dan maksimal 2 digit desimal
+                      const value = e.target.value.replace(/[^0-9.,]/g, "").replace(",", ".");
+                      if (/^\d*\.?\d{0,2}$/.test(value)) {
+                        setFormData({ ...formData, luasTanah: value });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab|\./.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="Contoh: 120.50"
+                  />
                 </div>
+
                 <div>
                   <Label className="mb-1.5 block">Luas Bangunan (m²)</Label>
-                  <Input name="luasBangunan" value={formData.luasBangunan} onChange={handleChange} />
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    name="luasBangunan"
+                    value={formData.luasBangunan}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9.,]/g, "").replace(",", ".");
+                      if (/^\d*\.?\d{0,2}$/.test(value)) {
+                        setFormData({ ...formData, luasBangunan: value });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab|\./.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="Contoh: 85.75"
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label className="mb-1.5 block">Kamar Tidur</Label>
-                  <Input name="kamarTidur" value={formData.kamarTidur} onChange={handleChange} />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    name="kamarTidur"
+                    value={formData.kamarTidur}
+                    onChange={(e) => setFormData({ ...formData, kamarTidur: e.target.value.replace(/\D/g, "") })}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault();
+                    }}
+                    placeholder="3"
+                  />
                 </div>
+
                 <div>
                   <Label className="mb-1.5 block">Kamar Mandi</Label>
-                  <Input name="kamarMandi" value={formData.kamarMandi} onChange={handleChange} />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    name="kamarMandi"
+                    value={formData.kamarMandi}
+                    onChange={(e) => setFormData({ ...formData, kamarMandi: e.target.value.replace(/\D/g, "") })}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault();
+                    }}
+                    placeholder="2"
+                  />
                 </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
+
                 <div>
                   <Label className="mb-1.5 block">Lantai</Label>
-                  <Input name="lantai" value={formData.lantai} onChange={handleChange} />
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    name="lantai"
+                    value={formData.lantai}
+                    onChange={(e) => setFormData({ ...formData, lantai: e.target.value.replace(/\D/g, "") })}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault();
+                    }}
+                    placeholder="2"
+                  />
                 </div>
+
                 <div>
                   <Label className="mb-1.5 block">Garasi</Label>
-                  <Input name="garasi" value={formData.garasi} onChange={handleChange} />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    name="garasi"
+                    value={formData.garasi}
+                    onChange={(e) => setFormData({ ...formData, garasi: e.target.value.replace(/\D/g, "") })}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault();
+                    }}
+                    placeholder="1"
+                  />
                 </div>
               </div>
-              
 
               <div>
                 <Label className="mb-1.5 block">Tahun Bangun atau Renovasi</Label>
-                <Input name="tahunBangun" value={formData.tahunBangun} onChange={handleChange} />
+                <Input
+                  type="number"
+                  name="tahunBangun"
+                  value={formData.tahunBangun}
+                  onChange={(e) => setFormData({ ...formData, tahunBangun: e.target.value.replace(/\D/g, "") })}
+                  onKeyDown={(e) => {
+                    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault();
+                  }}
+                  placeholder="2022"
+                />
               </div>
             </div>
           )}
+
 
           {/* STEP 4 - UPLOAD GAMBAR */}
 
