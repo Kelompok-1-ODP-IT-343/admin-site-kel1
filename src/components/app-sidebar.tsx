@@ -44,7 +44,7 @@ import { useEffect, useState } from "react";
 const menuItems = [
   { name: "Home", icon: Home },
   { name: "Approval KPR", icon: CheckSquare },
-  { name: "Approval Properties", icon: Building },
+  // { name: "Approval Properties", icon: Building },
   { name: "Approval History", icon: ListTodo },
   { name: "Customer List", icon: Users },
   { name: "Developer List", icon: Building2 },

@@ -10,7 +10,8 @@ export async function getUserProfile() {
 
     if (!token) throw new Error("No token found in cookies");
 
-    const res = await fetch("http://localhost:18080/api/v1/user/profile", {
+    // const res = await fetch("http://localhost:18080/api/v1/user/profile", {
+    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/user/profile", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

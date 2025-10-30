@@ -39,7 +39,8 @@ export async function uploadPropertyImage(file: File) {
     const formData = new FormData();
     formData.append("image", file); // ⬅️ pastikan key = "image" sesuai Postman kamu
 
-    const res = await fetch("http://localhost:18080/api/v1/admin/image", {
+    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/admin/image", {
+    // const res = await fetch("http://localhost:18080/api/v1/admin/image", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -69,7 +70,8 @@ export async function createProperty(data: any) {
 
     if (!token) throw new Error("Token tidak ditemukan di cookie");
 
-    const res = await fetch("http://localhost:18080/api/v1/properties", {
+    // const res = await fetch("http://localhost:18080/api/v1/properties", {
+    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/properties", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -116,7 +118,8 @@ export async function getAdminProperties() {
 
     if (!token) throw new Error("Token tidak ditemukan di cookie")
 
-    const res = await fetch("http://localhost:18080/api/v1/admin/properties", {
+    // const res = await fetch("http://localhost:18080/api/v1/admin/properties", {
+    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/admin/properties", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -178,7 +181,10 @@ export async function updateProperty(id: string | number, data: Partial<Property
   }
   console.log("🔍 PUT BODY:", JSON.stringify(filteredData, null, 2))
 
-  const res = await fetch(`http://localhost:18080/api/v1/admin/properties/${id}`, {
+  // const res = await fetch(`http://localhost:18080/api/v1/admin/properties/${id}`, {
+  const res = await fetch(`http://local-dev.satuatap.my.id/api/v1/admin/properties/${id}`, {
+  
+  
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

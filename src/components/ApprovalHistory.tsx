@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { getAllNonSubmittedPengajuan, Pengajuan } from "@/services/approvekpr"
 import * as React from "react"
 import {
   ColumnDef,
@@ -34,7 +36,13 @@ type HistoryRow = {
   property_name: string
   address: string
   price: number
-  status: "approve" | "reject"
+  status:
+    | "PROPERTY_APPRAISAL"
+    | "CREDIT_ANALYSIS"
+    | "FINAL_APPROVAL"
+    | "ACCEPTED"
+    | "REJECTED"
+    | string // fallback biar gak error kalau ada status baru
   approval_date: string
 }
 
@@ -53,23 +61,49 @@ export default function ApprovalHistory() {
   const [filter, setFilter] = React.useState("")
   const [selectedRow, setSelectedRow] = React.useState<HistoryRow | null>(null)
   const [openDialog, setOpenDialog] = React.useState(false)
+  const [data, setData] = useState<Pengajuan[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchData() {
+      const result = await getAllNonSubmittedPengajuan()
+      setData(result)
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
 
   // 🔗 Gabungkan data customer dan property
+  // const joinedData: HistoryRow[] = React.useMemo(() => {
+  //   return customers.map((cust) => {
+  //     const prop = properties.find((p) => p.id === cust.property_id)
+  //     return {
+  //       id: cust.id,
+  //       application_id: cust.application_id || `APP-${cust.id.padStart(3, "0")}`,
+  //       customer_name: cust.name,
+  //       property_name: prop?.title || "Properti tidak ditemukan",
+  //       address: prop ? `${prop.address}, ${prop.city}` : "-",
+  //       price: prop?.price || 0,
+  //       status: cust.status,
+  //       approval_date: cust.approval_date,
+  //     }
+  //   })
+  // }, [])
+
+  // 🔹 Data hasil API (kecuali SUBMITTED)
   const joinedData: HistoryRow[] = React.useMemo(() => {
-    return customers.map((cust) => {
-      const prop = properties.find((p) => p.id === cust.property_id)
-      return {
-        id: cust.id,
-        application_id: cust.application_id || `APP-${cust.id.padStart(3, "0")}`,
-        customer_name: cust.name,
-        property_name: prop?.title || "Properti tidak ditemukan",
-        address: prop ? `${prop.address}, ${prop.city}` : "-",
-        price: prop?.price || 0,
-        status: cust.status,
-        approval_date: cust.approval_date,
-      }
-    })
-  }, [])
+    return data.map((item) => ({
+      id: item.id.toString(),
+      application_id: item.aplikasiKode,
+      customer_name: item.applicantName,
+      property_name: item.namaProperti,
+      address: item.alamat,
+      price: item.harga,
+      status: item.status, // nanti di-mapping di kolom
+      approval_date: item.tanggal,
+    }))
+  }, [data])
+
 
   const filteredData = React.useMemo(() => {
     return joinedData.filter((item) =>
@@ -118,41 +152,39 @@ export default function ApprovalHistory() {
     },
     {
       accessorKey: "approval_date",
-      header: () => <div className="font-medium">Tanggal</div>,
+      header: () => <div className="font-semibold">Tanggal</div>,
       cell: ({ row }) => (
-        <div className="font-semibold">{formatDate(row.getValue("approval_date") as string)}</div>
+        <div className="">{formatDate(row.getValue("approval_date") as string)}</div>
       ),
     },
     {
       accessorKey: "status",
       header: () => <div className="font-semibold">Status</div>,
       cell: ({ row }) => {
-        const status = row.getValue("status") as "approve" | "reject"
-        const approved = status === "approve"
+        const status = (row.getValue("status") as string) || ""
+        
+        // 🔹 Mapping status ke label & warna
+        const statusMap: Record<string, { label: string; color: string }> = {
+          PROPERTY_APPRAISAL: { label: "Property Appraisal", color: "bg-blue-200 text-blue-900 hover:bg-blue-300" },
+          CREDIT_ANALYSIS: { label: "Credit Analysis", color: "bg-amber-200 text-amber-900 hover:bg-amber-300" },
+          FINAL_APPROVAL: { label: "Final Approval", color: "bg-purple-200 text-purple-900 hover:bg-purple-300" },
+          ACCEPTED: { label: "Accepted", color: "bg-green-200 text-green-900 hover:bg-green-300" },
+          REJECTED: { label: "Rejected", color: "bg-rose-200 text-rose-900 hover:bg-rose-300" },
+        }
+
+        const current = statusMap[status] || { label: status, color: "bg-gray-200 text-gray-700" }
+
         return (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setSelectedRow(row.original)
-              setOpenDialog(true)
-            }}
-            className={`flex items-center gap-2 px-3 py-1 rounded-md font-semibold shadow-sm ${
-              approved
-                ? "text-green-900 bg-green-200 hover:bg-green-300"
-                : "text-rose-900 bg-rose-200 hover:bg-rose-300"
-            }`}
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-md font-semibold shadow-sm ${current.color}`}
           >
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                approved ? "bg-green-700" : "bg-rose-700"
-              }`}
-            />
-            {approved ? "Approved" : "Rejected"}
-          </Button>
+            <span className="h-2.5 w-2.5 rounded-full bg-current" />
+            {current.label}
+          </div>
         )
       },
     },
+
   ]
 
   const table = useReactTable({
@@ -164,6 +196,15 @@ export default function ApprovalHistory() {
     getSortedRowModel: getSortedRowModel(),
     state: { sorting },
   })
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+        <div className="animate-spin h-8 w-8 border-2 border-t-transparent border-muted-foreground rounded-full mb-3" />
+        <p>Memuat data riwayat approval...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full">
@@ -193,7 +234,7 @@ export default function ApprovalHistory() {
             ))}
           </TableHeader>
 
-          <TableBody>
+          {/* <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
@@ -214,7 +255,30 @@ export default function ApprovalHistory() {
                 </TableCell>
               </TableRow>
             )}
+          </TableBody> */}
+          <TableBody>
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} className="hover:bg-muted/40 transition-colors">
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-32 text-center text-muted-foreground"
+                >
+                  No Results.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
+
         </Table>
       </div>
 

@@ -24,31 +24,70 @@ import { customers, Customer } from "@/components/data/approvekpr"
 // import { ArrowUpIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Calculator, Settings2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { getAllPengajuanByUser, Pengajuan } from "@/services/approvekpr"
+
+function formatDate(dateString: string) {
+  if (!dateString) return "-"
+  const d = new Date(dateString)
+  return d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
 
 export default function ApprovalTable() {
   const router = useRouter()
+  const [data, setData] = useState<Pengajuan[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchData() {
+      const result = await getAllPengajuanByUser()
+      setData(result)
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
 
   const handleActionClick = (customer: Customer) => {
     router.push(`/dashboard/simulate?id=${customer.id}`)
   }
 
 
-  const columns: ColumnDef<Customer>[] = [
+  const columns: ColumnDef<Pengajuan>[] = [
     {
-      accessorKey: "name",
+      accessorKey: "aplikasiKode",
+      header: () => <div className="font-semibold">ID Pengajuan</div>,
+      cell: ({ row }) => <div className="capitalize">{row.getValue("aplikasiKode")}</div>,
+    },
+    {
+      accessorKey: "applicantName",
       header: () => <div className="font-semibold">Name</div>,
-      cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
+      cell: ({ row }) => <div className="capitalize">{row.getValue("applicantName")}</div>,
     },
     {
-      accessorKey: "email",
-      header: () => <div className="font-semibold">Email</div>,
-      cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
-    },
-    {
-      accessorKey: "phone",
+      accessorKey: "applicantPhone",
       header: () => <div className="font-semibold">Phone</div>,
       cell: ({ row }) => (
-        <div className="text-center font-medium">{row.getValue("phone")}</div>
+        <div className="text-center font-medium">{row.getValue("applicantPhone") || "-"}</div>
+      ),
+    },
+    {
+      accessorKey: "namaProperti",
+      header: () => <div className="font-semibold">Nama Properti</div>,
+      cell: ({ row }) => (
+        <div className="font-medium">{row.getValue("namaProperti")}</div>
+      ),
+    },
+    {
+      accessorKey: "tanggal",
+      header: () => <div className="font-semibold">Tanggal</div>,
+      cell: ({ row }) => (
+        <div className="text-center">
+          <div className="">{formatDate(row.getValue("tanggal") as string)}</div>
+        </div>
       ),
     },
     {
@@ -59,18 +98,18 @@ export default function ApprovalTable() {
         </div>
       ),
       cell: ({ row }) => {
-        const customer = row.original
+        const pengajuan = row.original
         return (
           <div className="flex justify-center">
             <Button
               variant="outline"
               size="sm"
               aria-label="Simulate"
-              onClick={() => handleActionClick(customer)}
-              className="flex items-center gap-2" 
+              onClick={() => router.push(`/dashboard/simulate?id=${pengajuan.id}`)}
+              className="flex items-center gap-2"
             >
-              <Settings2 className="w-4 h-4" /> 
-              Action 
+              <Settings2 className="w-4 h-4" />
+              Action
             </Button>
           </div>
         )
@@ -79,11 +118,15 @@ export default function ApprovalTable() {
   ]
 
   const table = useReactTable({
-    data: customers,
+    data, // ⬅️ sekarang ambil dari API, bukan dari file statis
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   })
+
+  if (loading) {
+    return <div className="p-6 text-center text-muted-foreground">Loading data pengajuan...</div>
+  }
 
   return (
     <div className="w-full">
@@ -93,10 +136,10 @@ export default function ApprovalTable() {
           className="max-w-sm"
           onChange={(e) => {
             const value = e.target.value.toLowerCase()
-            const filtered = customers.filter((c) =>
-              c.email.toLowerCase().includes(value)
+            const filtered = data.filter((item) =>
+              (item.applicantEmail || "").toLowerCase().includes(value)
             )
-            table.options.data = filtered.length ? filtered : customers
+            table.options.data = filtered.length ? filtered : data
           }}
         />
       </div>

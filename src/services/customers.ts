@@ -8,7 +8,9 @@ export async function getAllUsers() {
 
     if (!token) throw new Error("Token tidak ditemukan di cookie");
 
-    const res = await fetch("http://localhost:18080/api/v1/admin/users", {
+    // const res = await fetch("http://localhost:18080/api/v1/admin/users", { 
+    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/admin/users", { 
+    
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -35,5 +37,36 @@ export async function getAllUsers() {
   } catch (error) {
     console.error("❌ Error fetching users:", error);
     return [];
+  }
+}
+
+export async function deleteUser(id: string) {
+  try {
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="))
+      ?.split("=")[1];
+
+    if (!token) throw new Error("Token tidak ditemukan di cookie");
+
+    const res = await fetch(`http://local-dev.satuatap.my.id/api/v1/admin/users/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      console.error("❌ Gagal menghapus user:", res.status);
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
+
+    console.log(`✅ User ${id} berhasil dihapus`);
+    return true;
+  } catch (error) {
+    console.error("❌ Error deleteUser:", error);
+    return false;
   }
 }

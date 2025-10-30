@@ -8,7 +8,8 @@ export async function loginBlueprint({
   password: string;
 }) {
   try {
-    const res = await fetch("http://localhost:18080/api/v1/auth/login", {
+    // const res = await fetch("http://localhost:18080/api/v1/auth/login", {
+    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -26,6 +27,7 @@ export async function loginBlueprint({
     // ✅ Simpan token ke cookie biar bisa dibaca middleware
     if (data.data?.token) {
       document.cookie = `token=${data.data.token}; path=/; max-age=86400;`;
+      return { success: true, data: data.data };
     }
 
     return { success: true, data: data.data };

@@ -15,7 +15,13 @@ export type HistoryRow = {
   property_name: string
   address: string
   price: number
-  status: "approve" | "reject"
+    status:
+    | "PROPERTY_APPRAISAL"
+    | "CREDIT_ANALYSIS"
+    | "FINAL_APPROVAL"
+    | "ACCEPTED"
+    | "REJECTED"
+    | string // fallback biar gak error kalau ada status baru
   approval_date: string
 }
 

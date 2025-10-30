@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import * as React from "react"
 import {
   ColumnDef,
@@ -33,7 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Customer } from "@/components/data/customers"
-import { getAllUsers } from "@/services/customers"
+import { getAllUsers, deleteUser } from "@/services/customers"
 import { apiToUi } from "@/lib/customer-mapper"
 
 import ViewCustomerDialog from "@/components/dialogs/ViewCustomerDialogs"
@@ -146,11 +147,26 @@ export default function CustomerTableDemo() {
                   Copy Detail
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => console.log("Delete", customer.id)}
+                  onClick={async () => {
+                    const confirmDelete = confirm(`Yakin ingin menghapus user ini?`)
+                    if (!confirmDelete) return
+                    toast.promise(
+                      deleteUser(customer.id),
+                      {
+                        loading: "Menghapus user...",
+                        success: () => {
+                          setData((prev) => prev.filter((u) => u.id !== customer.id))
+                          return `${customer.name} berhasil dihapus`
+                        },
+                        error: "❌ Gagal menghapus user. Coba lagi nanti.",
+                      },
+                    )
+                  }}
                   className="text-red-500 focus:text-red-600"
                 >
                   Delete
                 </DropdownMenuItem>
+
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

@@ -53,8 +53,8 @@ export default function Dashboard() {
         )
       case "Approval KPR":
         return <ApprovalSection />
-      case "Approval Properties":
-        return <ApprovalProperties />
+      // case "Approval Properties":
+      //   return <ApprovalProperties />
       case "Approval History":
         return <ApprovalHistory />
       case "Customer List":
