@@ -1,4 +1,6 @@
-// services/approvekpr.ts
+// src/services/approvekpr.ts
+import coreApi from "@/lib/coreApi"
+
 export type Pengajuan = {
   id: number
   applicantName: string
@@ -13,67 +15,37 @@ export type Pengajuan = {
   status: string
 }
 
+// 🔹 Ambil semua pengajuan dengan status SUBMITTED
 export async function getAllPengajuanByUser() {
   try {
-    // 🔹 Ambil token admin dari cookie
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1]
-
-    if (!token) throw new Error("Token tidak ditemukan di cookie")
-
-    // const res = await fetch("http://localhost:18080/api/v1/kpr-applications/admin/all", {
-    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/kpr-applications/admin/all", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
+    const res = await coreApi.get("/kpr-applications/admin/all", {
+      headers: { "Cache-Control": "no-store" },
     })
 
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`)
-    }
+    const json = res.data
+    const data: Pengajuan[] =
+      json.data?.filter((item: Pengajuan) => item.status === "SUBMITTED") || []
 
-    const json = await res.json()
-    // 🔹 Filter hanya yang status === "SUBMITTED"
-    const data: Pengajuan[] = json.data?.filter((item: Pengajuan) => item.status === "SUBMITTED") || []
-
+    console.log("📦 Pengajuan SUBMITTED:", data.length)
     return data
   } catch (error) {
-    console.error("❌ Error fetching pengajuan:", error)
+    console.error("❌ Error fetching pengajuan (submitted):", error)
     return []
   }
 }
 
+// 🔹 Ambil semua pengajuan dengan status selain SUBMITTED
 export async function getAllNonSubmittedPengajuan() {
   try {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1]
-
-    if (!token) throw new Error("Token tidak ditemukan di cookie")
-
-    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/kpr-applications/admin/all", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
+    const res = await coreApi.get("/kpr-applications/admin/all", {
+      headers: { "Cache-Control": "no-store" },
     })
 
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
+    const json = res.data
+    const data: Pengajuan[] =
+      json.data?.filter((item: Pengajuan) => item.status !== "SUBMITTED") || []
 
-    const json = await res.json()
-    // 🔹 Ambil semua kecuali SUBMITTED
-    const data: Pengajuan[] = json.data?.filter(
-      (item: Pengajuan) => item.status !== "SUBMITTED"
-    ) || []
-
+    console.log("📦 Pengajuan non-submitted:", data.length)
     return data
   } catch (error) {
     console.error("❌ Error fetching pengajuan (non-submitted):", error)

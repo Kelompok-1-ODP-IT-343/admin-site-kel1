@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginBlueprint } from '@/services/auth';
+import { loginBlueprint, verifyOtpBlueprint } from '@/services/auth';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'login' | 'otp'>('login');
+  const [identifier, setIdentifier] = useState<string>("");
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,22 +30,25 @@ export default function LoginPage() {
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const identifier = form.get('identifier') as string;
-    const password = form.get('password') as string;
+    const id = form.get("identifier") as string;
+    const password = form.get("password") as string;
 
     try {
-      const result = await loginBlueprint({ identifier, password });
+      const result = await loginBlueprint({ identifier: id, password });
+
       if (result.success) {
-        setStep('otp');            // ✅ lanjut ke tampilan OTP
+        setIdentifier(id); // simpan identifier untuk verify OTP
+        setStep("otp");
       } else {
-        setError(result.message || 'Login gagal.');
+        setError(result.message || "Login gagal.");
       }
     } catch {
-      setError('Gagal terhubung ke server');
+      setError("Gagal terhubung ke server");
     } finally {
       setLoading(false);
     }
   };
+
  
   // state untuk OTP
   const [otp, setOtp] = useState("");
@@ -56,15 +60,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (otp === "230303") {
-        // ✅ contoh generate token dummy
-        const dummyToken = "dummy_generated_token_12345";
-        document.cookie = `token=${dummyToken}; path=/; max-age=86400;`;
-
-        // redirect ke dashboard
+      const result = await verifyOtpBlueprint({ identifier, otp });
+      if (result.success) {
         router.push("/dashboard");
       } else {
-        setError("Kode OTP salah. Silakan coba lagi.");
+        setError(result.message || "Kode OTP salah.");
       }
     } finally {
       setLoading(false);

@@ -1,72 +1,36 @@
+// src/services/customer.ts
+import coreApi from "@/lib/coreApi"
+
 export async function getAllUsers() {
   try {
-    // 🔹 Ambil token dari cookie
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1];
+    const res = await coreApi.get("/admin/users", {
+      // disable cache di sisi Next.js fetch layer
+      headers: { "Cache-Control": "no-store" },
+    })
 
-    if (!token) throw new Error("Token tidak ditemukan di cookie");
+    console.log("➡️ STATUS:", res.status)
+    console.log("📦 HASIL API:", res.data)
 
-    // const res = await fetch("http://localhost:18080/api/v1/admin/users", { 
-    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/admin/users", { 
-    
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-
-    // 🔹 Cek status response dulu
-    if (!res.ok) {
-      console.error("❌ Fetch gagal:", res.status);
-      throw new Error(`HTTP error! Status: ${res.status}`);
-    }
-
-    // 🔹 Kalau OK, parse JSON-nya
-    const json = await res.json();
-
-    // 🔹 Debugging: tampilkan hasil response
-    console.log("➡️ STATUS:", res.status);
-    console.log("📦 HASIL API:", json);
-
-    // 🔹 Kembalikan array data user
-    return json.data?.data || [];
+    return res.data?.data?.data || []
   } catch (error) {
-    console.error("❌ Error fetching users:", error);
-    return [];
+    console.error("❌ Error fetching users:", error)
+    return []
   }
 }
 
 export async function deleteUser(id: string) {
   try {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1];
+    const res = await coreApi.delete(`/admin/users/${id}`)
 
-    if (!token) throw new Error("Token tidak ditemukan di cookie");
-
-    const res = await fetch(`http://local-dev.satuatap.my.id/api/v1/admin/users/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      console.error("❌ Gagal menghapus user:", res.status);
-      const errorText = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    if (res.status >= 200 && res.status < 300) {
+      console.log(`✅ User ${id} berhasil dihapus`)
+      return true
+    } else {
+      console.error("❌ Gagal menghapus user:", res.status)
+      return false
     }
-
-    console.log(`✅ User ${id} berhasil dihapus`);
-    return true;
   } catch (error) {
-    console.error("❌ Error deleteUser:", error);
-    return false;
+    console.error("❌ Error deleteUser:", error)
+    return false
   }
 }

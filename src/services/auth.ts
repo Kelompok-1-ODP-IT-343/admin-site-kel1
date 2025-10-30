@@ -1,5 +1,6 @@
-// src/services/auth.ts
-// const baseUrl = "http://localhost:18080/"
+import coreApi from "@/lib/coreApi";
+
+// 🟢 STEP 1: Kirim OTP (login tanpa token)
 export async function loginBlueprint({
   identifier,
   password,
@@ -8,31 +9,55 @@ export async function loginBlueprint({
   password: string;
 }) {
   try {
-    // const res = await fetch("http://localhost:18080/api/v1/auth/login", {
-    const res = await fetch("http://local-dev.satuatap.my.id/api/v1/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ identifier, password }), // ✅ tetap pakai identifier
+    const response = await coreApi.post("/auth/login", {
+      identifier,
+      password,
     });
 
-    const data = await res.json();
+    const data = response.data;
 
     // Periksa apakah request berhasil
-    if (!res.ok || !data.success) {
+    if (!data.success) {
       return { success: false, message: data.message || "Login gagal" };
     }
 
-    // ✅ Simpan token ke cookie biar bisa dibaca middleware
-    if (data.data?.token) {
-      document.cookie = `token=${data.data.token}; path=/; max-age=86400;`;
-      return { success: true, data: data.data };
-    }
-
+    // ❌ Jangan simpan token di sini
     return { success: true, data: data.data };
   } catch (error) {
     console.error("Login error:", error);
     return { success: false, message: "Gagal terhubung ke server" };
+  }
+}
+
+// 🟢 STEP 2: Verifikasi OTP → simpan token
+export async function verifyOtpBlueprint({
+  identifier,
+  otp,
+}: {
+  identifier: string;
+  otp: string;
+}) {
+  try {
+    const response = await coreApi.post("/auth/verify-otp", {
+      identifier,
+      otp,
+      purpose: "login", // sesuai API Postman-mu
+    });
+
+    const data = response.data;
+
+    if (!data.success) {
+      return { success: false, message: data.message || "OTP tidak valid" };
+    }
+
+    // ✅ Token baru diset di sini setelah OTP benar
+    if (data.data?.token) {
+      document.cookie = `token=${data.data.token}; path=/; max-age=86400; SameSite=Lax`;
+    }
+
+    return { success: true, data: data.data };
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    return { success: false, message: "Gagal verifikasi OTP" };
   }
 }
