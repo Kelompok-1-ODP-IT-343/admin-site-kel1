@@ -102,22 +102,24 @@ export async function updateProperty(id: string | number, data: Partial<Property
       "maintenance_fee",
       "pbb_value",
       "property_type",
+      "latitude",
+      "longitude",
       "developer_id",
-    ]
+    ];
 
-    const filteredData: Record<string, any> = {}
+    const filteredData: Record<string, any> = {};
     for (const key of allowedFields) {
       if (data[key as keyof Property] !== undefined) {
-        filteredData[key] = data[key as keyof Property]
+        filteredData[key] = data[key as keyof Property];
       }
     }
 
-    console.log("🔍 PUT BODY:", filteredData)
+    console.log("🔍 PUT BODY:", filteredData);
 
-    const res = await coreApi.put(`/admin/properties/${id}`, filteredData)
-    return res.data
+    const res = await coreApi.put(`/admin/properties/${id}`, filteredData);
+    return res.data;
   } catch (error: any) {
-    console.error(`❌ Error updateProperty(${id}):`, error)
-    return { success: false, message: error.message }
+    console.error(`❌ Error updateProperty(${id}):`, error);
+    return { success: false, message: error.message };
   }
 }

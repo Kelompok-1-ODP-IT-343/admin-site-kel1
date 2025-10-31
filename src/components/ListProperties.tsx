@@ -46,7 +46,16 @@ export default function PropertiesList() {
   const [filter, setFilter] = React.useState("")
   const [selectedProperty, setSelectedProperty] = React.useState<Property | null>(null)
   const [showDialog, setShowDialog] = React.useState(false)
-  
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const result = await getAdminProperties()
+      if (result.success) setData(result.data)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   React.useEffect(() => {
     const fetchData = async () => {
       const result = await getAdminProperties()
@@ -59,11 +68,11 @@ export default function PropertiesList() {
   }, [])
 
   // filter berdasarkan title
-const filteredData = React.useMemo(() => {
-  return data.filter((p) =>
-    p.title.toLowerCase().includes(filter.toLowerCase())
-  )
-}, [data, filter])
+  const filteredData = React.useMemo(() => {
+    return data.filter((p) =>
+      p.title.toLowerCase().includes(filter.toLowerCase())
+    )
+  }, [data, filter])
 
 
 
@@ -235,6 +244,7 @@ const filteredData = React.useMemo(() => {
             open={showDialog}
             onOpenChange={setShowDialog}
             property={selectedProperty}
+            onUpdated={() => fetchData()}
           />
         </React.Suspense>
       )}

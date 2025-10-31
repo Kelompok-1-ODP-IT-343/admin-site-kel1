@@ -2,6 +2,7 @@
 
 "use client";
 
+import { toast } from "sonner";
 import { useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,29 +14,80 @@ export default function ViewPropertyDialog({
   open,
   onOpenChange,
   property,
+  onUpdated,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   property: Property | null;
+  onUpdated?: () => void;
 }) {
   if (!property) return null;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({ ...property });
 
   const handleChange = (field: string, value: string | number) => {
     setEditedData((prev) => ({ ...prev, [field]: value }));
   };
+  const filterEditableFields = (data: any) => {
+    const allowedFields = [
+      "title",
+      "description",
+      "price",
+      "price_per_sqm",
+      "address",
+      "city",
+      "province",
+      "district",
+      "sub_district",
+      "postal_code",
+      "land_area",
+      "building_area",
+      "bedrooms",
+      "bathrooms",
+      "floors",
+      "garage",
+      "year_built",
+      "certificate_type",
+      "maintenance_fee",
+      "pbb_value",
+      "property_type",
+      "latitude",
+      "longitude",
+      "developer_id",
+    ];
+    const filtered: Record<string, any> = {};
+    for (const key of allowedFields) {
+      if (data[key] !== undefined) filtered[key] = data[key];
+    }
+    return filtered;
+  };
 
   const handleSave = async () => {
+    setIsSaving(true);
     try {
-      const result = await updateProperty(editedData.id, editedData);
-      console.log("✅ Updated:", result);
-      setIsEditing(false);
+      const payload = filterEditableFields(editedData);
+      console.log("📤 PUT PAYLOAD:", payload);
+
+      const result = await updateProperty(editedData.id, payload);
+
+      if (result?.success) {
+        toast.success("✅ Property updated successfully");
+        setIsEditing(false);
+        onUpdated?.(); // 🆕 panggil callback dari parent
+      } else {
+        toast.error(result?.message || "Gagal update property");
+      }
     } catch (err) {
-      console.error("❌ Gagal update:", err);
+      console.error("❌ Error saat update:", err);
+      toast.error("Terjadi kesalahan saat update property");
+    } finally {
+      setIsSaving(false);
     }
-};
+  };
+
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -239,15 +291,16 @@ export default function ViewPropertyDialog({
             </Button>
           ) : (
             <>
-              <Button size="sm" onClick={handleSave}>
-                Save
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save"}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-                Cancel
-              </Button>
-            </>
-          )}
-        </div>
+              <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} disabled={isSaving}>
+        Cancel
+      </Button>
+    </>
+  )}
+</div>
+
 
         <div className="mt-6 text-xs text-muted-foreground text-center">
           Data properti dilindungi oleh kebijakan privasi dan peraturan BNI.
