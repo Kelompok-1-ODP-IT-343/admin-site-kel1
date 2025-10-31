@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { getCustomerById } from "@/services/customers"
 import {
   Table,
   TableBody,
@@ -62,10 +63,25 @@ export default function CustomerTableDemo() {
   const [showPaymentDialog, setShowPaymentDialog] = React.useState(false)
   const [selectedPaymentId, setSelectedPaymentId] = React.useState<string | null>(null)
 
-  const handleViewCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer)
-    setShowDialog(true)
+  const handleViewCustomer = async (customer: Customer) => {
+    try {
+      toast.loading("Mengambil detail customer...", { id: "view-customer" })
+      const detail = await getCustomerById(customer.id)
+      if (!detail) {
+        toast.error("Gagal mengambil detail nasabah.", { id: "view-customer" })
+        return
+      }
+
+      console.log("📦 Detail mapped:", detail)
+      setSelectedCustomer(detail)
+      setShowDialog(true)
+      toast.success("Detail customer berhasil dimuat.", { id: "view-customer" })
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat mengambil data.", { id: "view-customer" })
+    }
   }
+
+
 
   const columns: ColumnDef<Customer>[] = [
     {

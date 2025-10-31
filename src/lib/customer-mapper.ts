@@ -1,36 +1,41 @@
-import { Customer } from "@/components/data/customers";
+// src/lib/customer-mapper.ts
+import { Customer } from "@/services/customers"
 
-export function apiToUi(apiData: any): Customer {
+export function apiToUi(api: any): Customer {
   return {
-    id: apiData.id?.toString() ?? "null",
-    name: apiData.fullName ?? "null",
-    username: apiData.username ?? "null",
-    email: apiData.email ?? "null",
-    phone: apiData.phone ?? "null",
-    nik: apiData.nik ?? "null",
-    npwp: apiData.npwp ?? "null",
-    birth_date: apiData.birthDate ?? "null",
-    birth_place: apiData.birthPlace ?? "null",
-    gender: apiData.gender ?? "null",
-    marital_status: apiData.maritalStatus ?? "null",
-    address: apiData.address ?? "null",
-    sub_district: "null",
-    district: "null",
-    city: apiData.city ?? "null",
-    province: apiData.province ?? "null",
-    postal_code: apiData.postalCode ?? "null",
-    ktp: "null",
-    slip: "null",
-    credit_score: 1,
-    credit_status: "Lancar",
-    occupation: apiData.occupation ?? "null",
-    company_postal_code: "null",
-    company_name: apiData.companyName ?? "null",
-    company_address: "null",
-    company_district: "null",
-    company_subdistrict: "null",
-    company_city: "null",
-    company_province: "null",
-    monthly_income: apiData.monthlyIncome?.toString() ?? "null",
-  };
+    id: String(api.id),
+
+    // --- Data Profil ---
+    name: api.fullName ?? "-",
+    username: api.username ?? "-",
+    email: api.email ?? "-",
+    phone: api.phone ?? "-",
+    nik: api.nik ?? "-",
+    npwp: api.npwp ?? "-",
+    birth_date: api.birthDate ?? "-",
+    birth_place: api.birthPlace ?? "-",
+    gender: api.gender ?? "-",
+    marital_status: api.maritalStatus ?? "-",
+    address: api.address ?? "-",
+    sub_district: "-", // ❌ belum ada di backend
+    district: "-",     // ❌ belum ada di backend
+    city: api.city ?? "-",
+    province: api.province ?? "-",
+    postal_code: api.postalCode ?? "-",
+    ktp: "", // ❌ belum ada di backend
+    slip: "", // ❌ belum ada di backend
+    credit_score: 3, // fallback dummy (karena belum ada di backend)
+    credit_status: "Lancar", // fallback dummy
+
+    // --- Data Pekerjaan ---
+    occupation: api.occupation ?? "-",
+    company_postal_code: "-", // ❌ belum ada
+    company_name: api.companyName ?? "-",
+    company_address: "-", // ❌ belum ada
+    company_district: "-", // ❌ belum ada
+    company_subdistrict: "-", // ❌ belum ada
+    company_city: "-", // ❌ belum ada
+    company_province: "-", // ❌ belum ada
+    monthly_income: String(api.monthlyIncome ?? "0"),
+  }
 }

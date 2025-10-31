@@ -1,5 +1,6 @@
 // src/services/customer.ts
 import coreApi from "@/lib/coreApi"
+import { apiToUi } from "@/lib/customer-mapper"
 
 export type Customer = {
   id: string
@@ -69,3 +70,15 @@ export async function deleteUser(id: string) {
     return false
   }
 }
+
+export async function getCustomerById(id: string | number) {
+  try {
+    const res = await coreApi.get(`/admin/users/${id}`)
+    const raw = res.data?.data
+    return raw ? apiToUi(raw) : null
+  } catch (error) {
+    console.error("❌ Error getCustomerById:", error)
+    return null
+  }
+}
+
