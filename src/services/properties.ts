@@ -2,33 +2,38 @@
 import coreApi from "@/lib/coreApi"
 
 export type Property = {
-  id: string
-  title: string
-  description: string
-  address: string
-  sub_district: string
-  district: string
-  city: string
-  province: string
-  postal_code: string
-  latitude: number
-  longitude: number
-  land_area: number
-  building_area: number
-  bedrooms: number
-  bathrooms: number
-  floors: number
-  garage: number
-  year_built: number
-  price: number
-  price_per_sqm: number
-  maintenance_fee: number
-  certificate_type: string
-  pbb_value: number
-  developer_name: string
-  image_url: string
-  property_type: string
-}
+  id: number;
+  title: string;
+  description: string;
+  address: string;
+  subDistrict: string;
+  district: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  latitude: number;
+  longitude: number;
+  landArea: number;
+  buildingArea: number;
+  bedrooms: number;
+  bathrooms: number;
+  floors: number;
+  garage: number;
+  yearBuilt: number;
+  price: number;
+  pricePerSqm: number;
+  maintenanceFee: number;
+  certificateType: string;
+  pbbValue: number;
+  developerName: string;
+  developerId?: number;
+  propertyType: string;
+  imageUrl: string;
+  status: string;
+  features?: { featureName: string; featureValue: string }[];
+  locations?: { poiName: string; distanceKm: number }[];
+};
+
 
 // 🔹 Upload gambar properti (form-data)
 export async function uploadPropertyImage(file: File) {
@@ -76,45 +81,62 @@ export async function getAdminProperties() {
     return { success: false, message: "Terjadi kesalahan saat mengambil data" }
   }
 }
+// ✅ Utility reusable untuk filter data properti yang boleh diupdate
+export function filterEditableFields(data: any) {
+  const allowedFields = [
+    // === BASIC ===
+    "title",
+    "description",
+    "status",
+    "propertyType",
+    "developerId",
+    "address",
+    "city",
+    "province",
+    "district",
+    "subDistrict",
+    "postalCode",
+    "latitude",
+    "longitude",
+
+    // === NUMERIC FIELDS ===
+    "price",
+    "pricePerSqm",
+    "bedrooms",
+    "bathrooms",
+    "floors",
+    "garage",
+    "yearBuilt",
+    "landArea",
+    "buildingArea",
+
+    // === FINANCIAL & LEGAL ===
+    "certificateType",
+    "maintenanceFee",
+    "pbbValue",
+
+    // === OPTIONAL ARRAYS (kalau backend support) ===
+    "features",
+    "locations",
+  ];
+
+  const filtered: Record<string, any> = {};
+  for (const key of allowedFields) {
+    if (data[key] !== undefined && data[key] !== null) {
+      filtered[key] = data[key];
+    }
+  }
+  return filtered;
+}
+
+
+
 
 // 🔹 Update properti berdasarkan ID
 export async function updateProperty(id: string | number, data: Partial<Property>) {
   try {
-    const allowedFields = [
-      "title",
-      "description",
-      "price",
-      "price_per_sqm",
-      "address",
-      "city",
-      "province",
-      "district",
-      "sub_district",
-      "postal_code",
-      "land_area",
-      "building_area",
-      "bedrooms",
-      "bathrooms",
-      "floors",
-      "garage",
-      "year_built",
-      "certificate_type",
-      "maintenance_fee",
-      "pbb_value",
-      "property_type",
-      "latitude",
-      "longitude",
-      "developer_id",
-    ];
-
-    const filteredData: Record<string, any> = {};
-    for (const key of allowedFields) {
-      if (data[key as keyof Property] !== undefined) {
-        filteredData[key] = data[key as keyof Property];
-      }
-    }
-
-    console.log("🔍 PUT BODY:", filteredData);
+    const filteredData = filterEditableFields(data); // ✅ panggil fungsi di atas
+    console.log("📡 PUT BODY TERKIRIM:", filteredData);
 
     const res = await coreApi.put(`/admin/properties/${id}`, filteredData);
     return res.data;

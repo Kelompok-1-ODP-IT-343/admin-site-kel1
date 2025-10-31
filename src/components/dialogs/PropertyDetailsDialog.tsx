@@ -8,7 +8,8 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Property, updateProperty } from "@/services/properties";
+import { Property, updateProperty, filterEditableFields } from "@/services/properties";
+
 
 export default function ViewPropertyDialog({
   open,
@@ -30,47 +31,13 @@ export default function ViewPropertyDialog({
   const handleChange = (field: string, value: string | number) => {
     setEditedData((prev) => ({ ...prev, [field]: value }));
   };
-  const filterEditableFields = (data: any) => {
-    const allowedFields = [
-      "title",
-      "description",
-      "price",
-      "price_per_sqm",
-      "address",
-      "city",
-      "province",
-      "district",
-      "sub_district",
-      "postal_code",
-      "land_area",
-      "building_area",
-      "bedrooms",
-      "bathrooms",
-      "floors",
-      "garage",
-      "year_built",
-      "certificate_type",
-      "maintenance_fee",
-      "pbb_value",
-      "property_type",
-      "latitude",
-      "longitude",
-      "developer_id",
-    ];
-    const filtered: Record<string, any> = {};
-    for (const key of allowedFields) {
-      if (data[key] !== undefined) filtered[key] = data[key];
-    }
-    return filtered;
-  };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const payload = filterEditableFields(editedData);
+      const payload = filterEditableFields(editedData)
+      const result = await updateProperty(editedData.id, payload)
       console.log("📤 PUT PAYLOAD:", payload);
-
-      const result = await updateProperty(editedData.id, payload);
 
       if (result?.success) {
         toast.success("✅ Property updated successfully");
@@ -106,7 +73,7 @@ export default function ViewPropertyDialog({
               {/* Image */}
               <div className="relative w-full h-56 rounded-lg overflow-hidden border">
                 <Image
-                  src={editedData.image_url}
+                  src={editedData.imageUrl}
                   alt={editedData.title}
                   fill
                   className="object-cover"
