@@ -37,7 +37,6 @@ export async function uploadPropertyImage(file: File) {
     formData.append("image", file) // pastikan key sesuai backend
 
     const res = await coreApi.post("/admin/image", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
     })
 
     console.log("📸 Upload sukses:", res.data)
@@ -67,7 +66,6 @@ export async function createProperty(data: any) {
 export async function getAdminProperties() {
   try {
     const res = await coreApi.get("/admin/properties", {
-      headers: { "Cache-Control": "no-store" },
     })
     const json = res.data
 

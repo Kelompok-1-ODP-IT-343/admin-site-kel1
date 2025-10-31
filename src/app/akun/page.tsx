@@ -1,4 +1,5 @@
-"use client";
+"use client"
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -628,3 +629,6 @@ function Field({ label, value }: { label: string; value: string }) {
     </label>
   );
 }
+
+export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"

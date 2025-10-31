@@ -210,11 +210,11 @@ export default function PropertiesList() {
       {/* Lazy Loaded Dialog */}
       {showDialog && (
         <React.Suspense fallback={null}>
-          <PropertyDetailsDialog
+          {/* <PropertyDetailsDialog
             open={showDialog}
             onOpenChange={setShowDialog}
             property={selectedProperty}
-          />
+          /> */}
         </React.Suspense>
       )}
     </div>

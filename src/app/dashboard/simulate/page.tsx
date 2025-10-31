@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   Check, X, Calculator, FileDown, Settings2, Info, XCircle,
@@ -1012,3 +1012,6 @@ export default function ApprovalDetailMockup(): JSX.Element {
     </div>
   );
 }
+
+export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"

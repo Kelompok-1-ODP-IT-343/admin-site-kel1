@@ -18,9 +18,7 @@ export type Pengajuan = {
 // 🔹 Ambil semua pengajuan dengan status SUBMITTED
 export async function getAllPengajuanByUser() {
   try {
-    const res = await coreApi.get("/kpr-applications/admin/all", {
-      headers: { "Cache-Control": "no-store" },
-    })
+    const res = await coreApi.get("/kpr-applications/admin/all")
 
     const json = res.data
     const data: Pengajuan[] =
@@ -38,7 +36,6 @@ export async function getAllPengajuanByUser() {
 export async function getAllNonSubmittedPengajuan() {
   try {
     const res = await coreApi.get("/kpr-applications/admin/all", {
-      headers: { "Cache-Control": "no-store" },
     })
 
     const json = res.data

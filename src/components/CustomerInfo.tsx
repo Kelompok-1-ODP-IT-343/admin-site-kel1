@@ -33,8 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Customer } from "@/components/data/customers"
-import { getAllUsers, deleteUser } from "@/services/customers"
+import { Customer, getAllUsers, deleteUser } from "@/services/customers"
 import { apiToUi } from "@/lib/customer-mapper"
 
 import ViewCustomerDialog from "@/components/dialogs/ViewCustomerDialogs"
@@ -142,10 +141,60 @@ export default function CustomerTableDemo() {
                   View Customer Detail
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => navigator.clipboard.writeText(customer.id)}
+                  onClick={async () => {
+                    try {
+                      // 🔹 ambil ulang data detail dari API (biar selalu up to date)
+                      const res = await getAllUsers();
+                      const detail = res.find((u: any) => u.id === customer.id);
+
+                      if (!detail) {
+                        alert("Customer tidak ditemukan!");
+                        return;
+                      }
+
+                      // 🔹 format teks agar mudah dibaca
+                      const formatted = `
+                        👤 *${detail.fullName}* (${detail.username})
+                        📧 Email: ${detail.email}
+                        📞 Phone: ${detail.phone}
+                        🏷️ Role: ${detail.roleName}
+                        📊 Status: ${detail.status}
+
+                        🆔 NIK: ${detail.nik}
+                        🧾 NPWP: ${detail.npwp}
+                        🎂 Lahir: ${detail.birthPlace}, ${detail.birthDate}
+                        🚻 Gender: ${detail.gender}
+                        💍 Marital Status: ${detail.maritalStatus}
+
+                        🏠 Alamat: ${detail.address}
+                        🏙️ Kota: ${detail.city}
+                        🌆 Provinsi: ${detail.province}
+                        📮 Kode Pos: ${detail.postalCode}
+
+                        💼 Pekerjaan: ${detail.occupation}
+                        🏢 Perusahaan: ${detail.companyName}
+                        💰 Penghasilan Bulanan: Rp${detail.monthlyIncome.toLocaleString("id-ID")}
+                        📈 Pengalaman Kerja: ${detail.workExperience} tahun
+                        🏗️ Developer: ${detail.developer ? "Ya" : "Tidak"}
+
+                        ✅ Email Verified: ${detail.emailVerified ? "Ya" : "Tidak"}
+                        📱 Phone Verified: ${detail.phoneVerified ? "Ya" : "Tidak"}
+                        🕒 Last Login: ${detail.lastLoginAt ?? "-"}
+                        📆 Dibuat: ${detail.createdAt}
+                        🔄 Diperbarui: ${detail.updatedAt}
+                      `;
+
+                      await navigator.clipboard.writeText(formatted.trim());
+                      alert("Customer detail berhasil disalin ke clipboard!");
+                    } catch (err) {
+                      console.error("Gagal copy customer detail:", err);
+                      alert("Gagal menyalin customer detail.");
+                    }
+                  }}
                 >
-                  Copy Detail
+                  Copy Customer Detail
                 </DropdownMenuItem>
+
                 <DropdownMenuItem
                   onClick={async () => {
                     const confirmDelete = confirm(`Yakin ingin menghapus user ini?`)

@@ -23,6 +23,36 @@ import ApprovalHistory from "@/components/ApprovalHistory"
 export default function Dashboard() {
   const router = useRouter()
   const [activeMenu, setActiveMenu] = useState("Home")
+  const [dateTime, setDateTime] = useState("")
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      let formatted = new Intl.DateTimeFormat("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Jakarta",
+      }).format(now)
+
+      formatted = formatted
+        .replace(/\s?pukul\s?/gi, " | ") 
+        .replaceAll(",", " |") 
+        .replaceAll(".", ":")  
+        .trim()
+
+      setDateTime(formatted)
+    }
+
+    updateTime()
+    const interval = setInterval(updateTime, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
 
   // 🧩 Proteksi: kalau belum login (nggak ada token di cookie) → redirect ke /login
   useEffect(() => {
@@ -83,9 +113,7 @@ export default function Dashboard() {
           <header className="flex justify-between items-center mb-8 text-gray-600 dark:text-gray-300">
             <div className="flex items-center gap-3">
               <SidebarTrigger />
-              <span className="font-medium">
-                Friday | 3 October 2025 | 12:00:00
-              </span>
+              <span className="font-medium">{dateTime}</span>
             </div>
 
             {/* 🌙 TOGGLE BUTTON */}

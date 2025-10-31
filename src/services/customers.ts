@@ -1,11 +1,46 @@
 // src/services/customer.ts
 import coreApi from "@/lib/coreApi"
 
+export type Customer = {
+  id: string
+
+  // --- Data Profil ---
+  name: string
+  username: string
+  email: string
+  phone: string
+  nik: string
+  npwp: string
+  birth_date: string
+  birth_place: string
+  gender: string
+  marital_status: string
+  address: string
+  sub_district: string
+  district: string
+  city: string
+  province: string
+  postal_code: string
+  ktp: string
+  slip: string
+  credit_score: 1 | 2 | 3 | 4 | 5
+  credit_status: "Lancar" | "Dalam Perhatian Khusus" | "Kurang Lancar" | "Diragukan" | "Macet"
+
+  // --- Data Pekerjaan ---
+  occupation: string
+  company_postal_code: string
+  company_name: string
+  company_address: string
+  company_district: string
+  company_subdistrict: string
+  company_city: string
+  company_province: string
+  monthly_income: string
+}
+
 export async function getAllUsers() {
   try {
     const res = await coreApi.get("/admin/users", {
-      // disable cache di sisi Next.js fetch layer
-      headers: { "Cache-Control": "no-store" },
     })
 
     console.log("➡️ STATUS:", res.status)

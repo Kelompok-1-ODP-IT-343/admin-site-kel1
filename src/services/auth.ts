@@ -1,6 +1,6 @@
 import coreApi from "@/lib/coreApi";
 
-// 🟢 STEP 1: Kirim OTP (login tanpa token)
+// Kirim OTP (login tanpa token)
 export async function loginBlueprint({
   identifier,
   password,
@@ -29,7 +29,7 @@ export async function loginBlueprint({
   }
 }
 
-// 🟢 STEP 2: Verifikasi OTP → simpan token
+// erifikasi OTP → simpan token
 export async function verifyOtpBlueprint({
   identifier,
   otp,

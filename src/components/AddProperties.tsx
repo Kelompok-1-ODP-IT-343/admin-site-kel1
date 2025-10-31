@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { IconFolder } from "@tabler/icons-react"
+import { fetchDevelopers } from "@/services/developers"
 import {
   Empty,
   EmptyContent,
@@ -19,43 +20,21 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Home, Wallet, Ruler, ImageIcon } from "lucide-react"
-const API = process.env.NEXT_PUBLIC_API_HOST;
 
 export default function AddProperties() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const router = useRouter();
+
   useEffect(() => {
-    async function fetchDevelopers() {
-      const token =
-        typeof document !== "undefined"
-          ? document.cookie.split("; ").find((c) => c.startsWith("token="))?.split("=")[1]
-          : null;
-
-      try {
-        const res = await fetch(`${API}/api/v1/admin/developers?page=0&size=50`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-          cache: "no-store",
-        });
-
-        const json = await res.json();
-        if (json?.success) {
-          setDevelopers(json.data.data || []); // sesuaikan struktur API kamu
-        } else {
-          console.warn("Gagal fetch developer:", json.message);
-        }
-      } catch (err) {
-        console.error("Error fetching developers:", err);
-      }
+    async function loadDevelopers() {
+      const list = await fetchDevelopers()
+      setDevelopers(list)
     }
 
-    fetchDevelopers();
-  }, []);
+    loadDevelopers()
+  }, [])
+
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1)

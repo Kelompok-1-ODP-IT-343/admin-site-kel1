@@ -14,8 +14,9 @@ import {
   VisibilityState,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal, Settings2 } from "lucide-react"
-import { updateDeveloperStatus, getDeveloperById } from "@/services/developers";
-
+import { fetchDevelopers, updateDeveloperStatus, getDeveloperById } from "@/services/developers";
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -38,7 +39,6 @@ import {
 // import { developers, DeveloperDetail } from "@/components/data/developers" DUMMY
 import { UiDeveloper, apiToUi } from "@/lib/developer-mapper";
 
-
 import ViewDeveloperDialog from "@/components/dialogs/ViewDevelopersDialog"
 type DeveloperDetail = {
   id: string
@@ -57,6 +57,7 @@ type DeveloperDetail = {
   partnership_level: string
   logo: string
 }
+
 export default function DeveloperTable() {
   const [developers, setDevelopers] = React.useState<UiDeveloper[]>([]);
   const [loading, setLoading] = React.useState(true)
@@ -69,48 +70,24 @@ export default function DeveloperTable() {
   const [page, setPage] = React.useState(0)
   const [totalPages, setTotalPages] = React.useState(1)
 
+
   React.useEffect(() => {
     async function loadDevelopers() {
-      setLoading(true)
+      setLoading(true);
 
-      // ambil token dari cookie (karena saat login kamu set pakai document.cookie)
-      const token =
-        typeof document !== "undefined"
-          ? document.cookie.split("; ").find(c => c.startsWith("token="))?.split("=")[1]
-          : null
-
-      // DEBUG: pastikan kelihatan di console
-      console.log("🔐 token:", token?.slice(0, 20) + "...")
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_HOST}/api/v1/admin/developers?page=${page}&size=10`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}), // << WAJIB
-          },
-          credentials: "include", // << kirim cookie juga
-          cache: "no-store",
-        }
-      )
-
-      if (res.status === 401) {
-        console.warn("❌ 401 Unauthorized — token tidak terkirim/invalid")
-        setDevelopers([])
-        setTotalPages(1)
-        setLoading(false)
-        return
+      try {
+        const data = await fetchDevelopers(); // ✅ pakai service Axios
+        setDevelopers(data);
+      } catch (err) {
+        console.error("❌ Gagal load developers:", err);
+        setDevelopers([]);
+      } finally {
+        setLoading(false);
       }
-
-      const json = await res.json()
-      setDevelopers(json?.data?.data ?? [])
-      setTotalPages(json?.data?.pagination?.totalPages ?? 1)
-      setLoading(false)
     }
 
-    loadDevelopers()
-  }, [page])
+    loadDevelopers();
+  }, [page]);
 
 
   const columns: ColumnDef<UiDeveloper>[] = [
@@ -164,6 +141,28 @@ export default function DeveloperTable() {
       },
     },
     {
+      accessorKey: "status",
+      header: () => <div className="font-semibold text-center">Status</div>,
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string
+        const isActive = status === "ACTIVE"
+        return (
+          <div className="flex justify-center">
+            <Badge
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                isActive
+                  ? "bg-green-100 text-green-700 border border-green-300"
+                  : "bg-red-100 text-red-700 border border-red-300"
+              }`}
+            >
+              {isActive ? "Active" : "Inactive"}
+            </Badge>
+          </div>
+        )
+      },
+    },
+
+    {
       id: "actions",
       enableHiding: false,
       header: () => <div className="font-semibold text-center">Action</div>,
@@ -173,10 +172,16 @@ export default function DeveloperTable() {
           <div className="flex justify-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-lg border-muted-foreground/20 hover:bg-muted"
+                <Button
+                  onClick={(e) => {
+                    console.log("🧩 Trigger Clicked", e.target)
+                    e.stopPropagation()
+                    e.preventDefault()
+                  }}
+                  onMouseDown={(e) => console.log("🧩 Mousedown on Trigger")}
+                  variant="outline"
+                  size="icon"
+                  className="relative z-[10] h-9 w-9 rounded-lg border-muted-foreground/20 hover:bg-muted"
                 >
                   <Settings2 className="h-5 w-5" />
                 </Button>
@@ -197,7 +202,6 @@ export default function DeveloperTable() {
                       const res = await getDeveloperById(developer.id);
                       const detail = res?.data ?? res;
 
-                      // format teks agar mudah dibaca (multi-baris)
                       const formatted = `
                 🏢 *${detail.companyName}* (${detail.companyCode})
                 📜 Business License: ${detail.businessLicense}
@@ -248,22 +252,24 @@ export default function DeveloperTable() {
                 </DropdownMenuItem> */}
                 <DropdownMenuItem
                   onClick={async () => {
-                    try {
-                      const newStatus = developer.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-                      const res = await updateDeveloperStatus(developer.id, newStatus);
-                      
-                      // update state list agar status langsung berubah di UI
-                      setDevelopers(prev =>
-                        prev.map(d =>
-                          d.id === developer.id ? { ...d, status: newStatus } : d
+                    const newStatus = developer.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" 
+                    toast.promise(
+                      updateDeveloperStatus(developer.id, newStatus).then(() => {
+                        setDevelopers(prev =>
+                          prev.map(d =>
+                            d.id === developer.id ? { ...d, status: newStatus } : d
+                          )
                         )
-                      );
-
-                      console.log(`✅ Developer ${developer.companyName} set to ${newStatus}`);
-                    } catch (err) {
-                      console.error("Gagal update status:", err);
-                      alert("Gagal mengubah status developer.");
-                    }
+                      }),
+                      {
+                        loading: newStatus === "ACTIVE" ? "Mengaktifkan developer..." : "Menonaktifkan developer...",
+                        success: () => 
+                          newStatus === "ACTIVE"
+                            ? `${developer.companyName} Aktif ✅`
+                            : `${developer.companyName} Nonaktif ❌`,
+                        error: "Gagal mengubah status developer. Coba lagi nanti.",
+                      }
+                    )
                   }}
                   className={`${
                     developer.status === "ACTIVE"
@@ -273,7 +279,6 @@ export default function DeveloperTable() {
                 >
                   {developer.status === "ACTIVE" ? "Inactive" : "Active"}
                 </DropdownMenuItem>
-
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -339,7 +344,7 @@ export default function DeveloperTable() {
         </DropdownMenu>
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="overflow-visible rounded-xl border bg-card shadow-sm">
         <Table className="w-full border-collapse">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -392,6 +397,7 @@ export default function DeveloperTable() {
                             textAlign: cell.column.id === "actions" ? "center" : "left",
                           }}
                           className={`
+                            relative
                             py-3 px-4 text-sm
                             ${
                               cell.column.id === "email"

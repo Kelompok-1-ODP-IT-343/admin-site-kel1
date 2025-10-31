@@ -2,17 +2,21 @@
 import coreApi from "@/lib/coreApi"
 
 // 🔹 Ambil semua developer (dengan pagination opsional)
-export async function fetchDevelopers(page = 0, size = 10) {
+export async function fetchDevelopers() {
   try {
-    const res = await coreApi.get(`/admin/developers`, {
-      params: { page, size },
-      headers: { "Cache-Control": "no-store" },
-    })
-
+    const res = await coreApi.get(`/admin/developers?page=0&size=10`)
     console.log("✅ Hasil API:", res.data)
     return res.data?.data?.data ?? []
-  } catch (error) {
+  } catch (error: any) {
     console.error("🚨 Error fetch developers:", error)
+
+    if (error.response) {
+      console.error("📡 Status:", error.response.status)
+      console.error("📦 Raw data:", error.response.data)
+      console.error("🧾 Headers:", error.response.headers)
+    } else {
+      console.error("❌ Tidak ada response dari server:", error.message)
+    }
     return []
   }
 }
@@ -21,7 +25,6 @@ export async function fetchDevelopers(page = 0, size = 10) {
 export async function getDeveloperById(id: string | number) {
   try {
     const res = await coreApi.get(`/admin/developers/${id}`, {
-      headers: { "Cache-Control": "no-store" },
     })
     return res.data // { success, data: {...} }
   } catch (error) {
