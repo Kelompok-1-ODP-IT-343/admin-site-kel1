@@ -4,14 +4,45 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Info, Send } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { assignAdmins } from "@/services/approvekpr";
+import { toast } from "sonner";
 
 export default function AssignApprovalDialog() {
+  const searchParams = useSearchParams();
   const [verifikator2, setVerifikator2] = useState("");
   const [verifikator3, setVerifikator3] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
-  const handleSubmit = () => {
-    alert(`Persetujuan dikirim:\n- Verifikator 2: ${verifikator2}\n- Verifikator 3: ${verifikator3}`);
+  const handleSubmit = async () => {
+    const applicationId = Number(searchParams.get("id"));
+    if (!applicationId) {
+      setFeedback("Application ID tidak ditemukan di URL.");
+      return;
+    }
+    if (!verifikator2 || !verifikator3) {
+      setFeedback("Silakan pilih Admin 1 dan Admin 2.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await assignAdmins({
+        applicationId,
+        firstApprovalId: Number(verifikator2),
+        secondApprovalId: Number(verifikator3),
+      });
+
+      toast.success(res.message || "Assign berhasil ✅");
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Gagal assign admin ❌";
+      toast.error(String(msg));
+    } finally {
+      setSubmitting(false);
+    }
   };
+
 
   return (
     <Dialog>
@@ -46,10 +77,10 @@ export default function AssignApprovalDialog() {
               onChange={(e) => setVerifikator2(e.target.value)}
               className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-white"
             >
-              <option value="">-- Pilih Verifikator --</option>
-              <option value="Admin 1">Admin 1</option>
-              <option value="Admin 2">Admin 2</option>
-              <option value="Admin 3">Admin 3</option>
+              <option value="">-- Pilih Admin 1 --</option>
+              {/* Nilai option memakai ID admin sesuai backend */}
+              <option value="56">Admin 1</option>
+              <option value="55">Admin 2</option>
             </select>
           </div>
 
@@ -62,10 +93,10 @@ export default function AssignApprovalDialog() {
               onChange={(e) => setVerifikator3(e.target.value)}
               className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-white"
             >
-              <option value="">-- Pilih Verifikator --</option>
-              <option value="Admin 1">Admin 1</option>
-              <option value="Admin 2">Admin 2</option>
-              <option value="Admin 3">Admin 3</option>
+              <option value="">-- Pilih Admin 2 --</option>
+              {/* Nilai option memakai ID admin sesuai backend */}
+              <option value="55">Admin 2</option>
+              <option value="56">Admin 1</option>
             </select>
           </div>
 
@@ -73,11 +104,16 @@ export default function AssignApprovalDialog() {
           <div className="flex justify-end">
             <Button
               onClick={handleSubmit}
+              disabled={submitting}
               className="flex items-center gap-2 bg-[#3FD8D4] hover:bg-[#3FD8D4]/80 text-white rounded-2xl px-5 py-3"
             >
-              <Send className="h-4 w-4" /> Kirim
+              <Send className="h-4 w-4" /> {submitting ? "Mengirim..." : "Kirim"}
             </Button>
           </div>
+
+          {feedback && (
+            <p className="text-xs mt-2 text-gray-700">{feedback}</p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

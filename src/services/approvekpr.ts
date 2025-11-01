@@ -49,3 +49,41 @@ export async function getAllNonSubmittedPengajuan() {
     return []
   }
 }
+
+// 🔹 Ambil detail pengajuan KPR berdasarkan ID
+export async function getPengajuanDetail(id: number) {
+  try {
+    const res = await coreApi.get(`/kpr-applications/${id}`)
+    return res.data?.data // langsung ambil field "data" dari response
+  } catch (error) {
+    console.error(`❌ Error fetching pengajuan detail for ID ${id}:`, error)
+    return null
+  }
+}
+
+// 🔹 Assign admin verifikator untuk sebuah aplikasi
+export type AssignAdminsPayload = {
+  applicationId: number
+  firstApprovalId: number
+  secondApprovalId: number
+}
+
+export async function assignAdmins(payload: AssignAdminsPayload) {
+  try {
+    const res = await coreApi.post("/kpr-applications/admin/assign", payload)
+    // Standarisasi hasil
+    return {
+      success: Boolean(res.data?.success ?? true),
+      data: res.data?.data ?? null,
+      message: res.data?.message ?? "Assigned",
+    }
+  } catch (err: any) {
+    if (err.response) {
+      console.error("❌ Assign admins failed:", err.response.data)
+    } else {
+      console.error("❌ Assign admins error:", err)
+    }
+    throw err
+  }
+}
+

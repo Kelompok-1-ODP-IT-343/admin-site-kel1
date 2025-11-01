@@ -4,7 +4,7 @@ import {
   Check, X, Calculator, FileDown, Settings2, Info, XCircle,
   Plus, Trash2, User2, Wallet, BarChart3, FileText, Download, Send, Eye
 } from "lucide-react";
-import React, { JSX, useMemo, useState } from "react";
+import React, { JSX, useMemo, useState, useEffect } from "react";
 // import {
 //   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 // } from "recharts";
@@ -12,6 +12,7 @@ import React, { JSX, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { customers } from "@/components/data/approvekpr"
+import { getPengajuanDetail } from "@/services/approvekpr"
 import { Button } from "@/components/ui/button"
 import AssignApprovalDialog from "@/components/dialogs/AssignTo";
 // import jsPDF from "jspdf"
@@ -38,123 +39,107 @@ type RateSegment = {
   label?: string
 };
 
-
 // ----- Component -----
 export default function ApprovalDetailMockup(): JSX.Element {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id");
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const id = searchParams.get("id")
+
+  // Tambah state untuk loading & data pengajuan dari API
+  const [loading, setLoading] = useState(true)
+  const [pengajuan, setPengajuan] = useState<any | null>(null)
+  const [openKtp, setOpenKtp] = useState(false)
+  const [openSlip, setOpenSlip] = useState(false)
+
+  // Fetch data pengajuan saat page dimount
+  useEffect(() => {
+    if (!id) return;
+    async function fetchDetail() {
+      try {
+        const result = await getPengajuanDetail(Number(id));
+        // pastikan format datanya aman
+        const safeData =
+          result?.data ??
+          (result?.success ? result.data : result) ??
+          null;
+
+        console.log("✅ Data pengajuan:", safeData);
+        setPengajuan(safeData);
+      } catch (err) {
+        console.error("❌ Gagal fetch pengajuan:", err);
+        setPengajuan(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchDetail();
+  }, [id]);
+
+  const isLoading = loading
+  const isError = !loading && !pengajuan
+  // Hindari return awal agar urutan Hooks konsisten antar render.
+  // Loading dan error akan ditampilkan secara kondisional di dalam JSX utama.
+  const {
+    userInfo: customer = {},
+    propertyInfo: property = {},
+    documents = [],
+    loanTermYears = 0,
+    loanAmount = 0,
+  } = pengajuan ?? {};
+  //Extract data dari response API
+  // const customer = pengajuan?.userInfo
+  // const property = pengajuan?.propertyInfo
+  // const documents = pengajuan?.documents || []
+  const ktp = documents.find((d: any) => d.documentType === "KTP")?.filePath
+  const slip = documents.find((d: any) => d.documentType === "SLIP_GAJI")?.filePath
   
   // --- FICO score (seeded by URL id) ---
-  const idNum = parseInt(searchParams.get("id") ?? "1", 10);
-
+  const idNum = parseInt(id ?? "1", 10)
   const seededRandom = (seed: number): number => {
-    const x = Math.sin(seed) * 10000;
-    return x - Math.floor(x);
-  };
+    const x = Math.sin(seed) * 10000
+    return x - Math.floor(x)
+  }
 
-  const score: number = Math.floor(300 + seededRandom(idNum) * 550);
+  const score: number = Math.floor(300 + seededRandom(idNum) * 550)
   const scoreLabel =
     score >= 740 ? "Excellent" :
     score >= 670 ? "Good" :
     score >= 580 ? "Fair" :
-    "Poor";
+    "Poor"
 
-  // cari customer berdasarkan ID
-  const customer = customers.find(c => c.id === id);
+  // pakai data dari API:
+  customer?.fullName ?? "-"
+  customer?.email ?? "-"
+  customer?.phone ?? "-"
 
-  const name = customer?.name || "Tidak Diketahui";
-  const email = customer?.email || "unknown@example.com";
-  const phone = customer?.phone || "-";
+  // properti simulasi default
+  const [startFloatAt, setStartFloatAt] = useState<number>(13)
+  const [flatRate, setFlatRate] = useState<number>(5.99)
+  const [floatRate, setFloatRate] = useState<number>(13.5)
+  const [scheme, setScheme] = useState<Scheme>("flat-floating")
 
-
-  const [openKtp, setOpenKtp] = useState(false);
-  const [openSlip, setOpenSlip] = useState(false);
-
-  // const [loanAmount, setLoanAmount] = useState<number>(850_000_000);
-  // const [tenor, setTenor] = useState<number>(240);
-  const [startFloatAt, setStartFloatAt] = useState<number>(13);
-  const [flatRate, setFlatRate] = useState<number>(5.99);
-  const [floatRate, setFloatRate] = useState<number>(13.5);
-  const [scheme, setScheme] = useState<Scheme>("flat-floating");
-  // const [page, setPage] = useState<number>(1);
-  // const pageSize = 12;
-  const [hargaProperti, setHargaProperti] = useState(850_000_000);
-  const [persenDP, setPersenDP] = useState(20);
-  const [jangkaWaktu, setJangkaWaktu] = useState(20);
-  const tenor = jangkaWaktu * 12;
-  const loanAmount = hargaProperti * (1 - persenDP / 100);
-
+  // contoh nilai awal diambil dari API kalau ada
+  const [hargaProperti, setHargaProperti] = useState(property?.price || 850_000_000)
+  const [persenDP, setPersenDP] = useState(20)
+  const [jangkaWaktu, setJangkaWaktu] = useState(pengajuan?.loanTermYears || 20)
+  const tenor = jangkaWaktu * 12
 
   // ---- fitur baru: multi rate adjustment ----
   const [rateSegments, setRateSegments] = useState<RateSegment[]>([
     { start: 1, end: 12, rate: 5.99 },
     { start: 13, end: 240, rate: 13.5 },
-  ]);
+  ])
   // --------------------------------------------
 
   const colors = {
     blue: "#3FD8D4",
     gray: "#757575",
     orange: "#FF8500",
-  } as const;
+  } as const
 
   function roundIDR(n: number): number {
-    return Math.round(n);
+    return Math.round(n)
   }
-
-
-
-  // Schedule builders
-  // function buildFlatSchedule(P: number, months: number, rateAnnual: number): Row[] {
-  //   const rMonthly = rateAnnual / 100 / 12;
-  //   const principalPart = P / months;
-  //   const interestPart = P * rMonthly;
-  //   let balance = P;
-  //   const rows: Row[] = [];
-  //   for (let m = 1; m <= months; m++) {
-  //     const principalPaid = m === months ? balance : principalPart;
-  //     const interestPaid = interestPart;
-  //     const payment = principalPaid + interestPaid;
-  //     balance = Math.max(0, balance - principalPaid);
-  //     rows.push({
-  //       month: m,
-  //       principalComponent: principalPaid,
-  //       interestComponent: interestPaid,
-  //       payment,
-  //       balance,
-  //       rateApplied: rateAnnual,
-  //     });
-  //   }
-  //   return rows;
-  // }
-
-  // function buildAnnuitySchedule(
-  //   P: number,
-  //   months: number,
-  //   rateAnnual: number,
-  //   startMonthIndex: number = 1
-  // ): Row[] {
-  //   const r = rateAnnual / 100 / 12;
-  //   if (months <= 0) return [];
-  //   const pay = r === 0 ? P / months : (P * r) / (1 - Math.pow(1 + r, -months));
-  //   const rows: Row[] = [];
-  //   let balance = P;
-  //   for (let i = 1; i <= months; i++) {
-  //     const interest = balance * r;
-  //     const principal = Math.min(balance, pay - interest);
-  //     balance = Math.max(0, balance - principal);
-  //     rows.push({
-  //       month: startMonthIndex + i - 1,
-  //       principalComponent: principal,
-  //       interestComponent: interest,
-  //       payment: principal + interest,
-  //       balance,
-  //       rateApplied: rateAnnual,
-  //     });
-  //   }
-  //   return rows;
-  // }
 
   // ====== Perhitungan amortisasi berdasarkan segmen bunga ======
   function buildMultiSegmentSchedule(
@@ -431,15 +416,26 @@ export default function ApprovalDetailMockup(): JSX.Element {
 
       {/* Main */}
       <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        {isLoading && (
+          <div className="p-10 text-center text-muted-foreground">
+            Memuat data pengajuan...
+          </div>
+        )}
+
+        {isError && (
+          <div className="p-10 text-center text-red-500">
+            ❌ Data pengajuan tidak ditemukan
+          </div>
+        )}
         {/* Summary Cards */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-5 rounded-2xl shadow-sm border flex flex-col" style={{ borderColor: colors.gray + "33" }}>
+          <div className="p-5 rounded-2xl shadow-sm border flex flex-col">
             <div className="flex items-center gap-2 mb-1">
-              <User2 className="h-7 w-7" color={colors.blue} />
+              <User2 className="h-7 w-7 text-[#3FD8D4]" />
               <p className="text-base font-semibold">Nasabah</p>
             </div>
-            <h3 className="font-semibold text-black text-lg">{name}</h3>
-            <p className="flex text-sm text-gray-600">{email} • {phone}</p>
+            <h3 className="font-semibold text-black text-lg">{customer.fullName}</h3>
+            <p className="flex text-sm text-gray-600">{customer.email} • {customer.phone}</p>
           </div>
           <div className="p-5 rounded-2xl shadow-sm border flex flex-col" style={{ borderColor: colors.gray + "33" }}>
             <div className="flex items-center gap-2 mb-1">
@@ -530,7 +526,10 @@ export default function ApprovalDetailMockup(): JSX.Element {
 
         {/* === Detail Customer === */}
         {customer && (
-          <section className="border rounded-2xl p-5 bg-white shadow-sm" style={{ borderColor: colors.gray + "33" }}>
+          <section
+            className="border rounded-2xl p-5 bg-white shadow-sm"
+            style={{ borderColor: colors.gray + "33" }}
+          >
             <h2 className="font-semibold text-black text-lg mb-4 flex items-center gap-2">
               <User2 className="h-6 w-6 text-[#3FD8D4]" /> Detail Customer
             </h2>
@@ -541,69 +540,58 @@ export default function ApprovalDetailMockup(): JSX.Element {
                 <h3 className="font-semibold text-base mb-3 text-gray-900 dark:!text-white">
                   Data Profil
                 </h3>
-                <div></div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Nama Lengkap</span>
-                    <span className="font-medium text-right">{customer.name}</span>
+                    <span className="font-medium text-right">{customer?.fullName ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Username</span>
-                    <span className="font-medium text-right">{customer.username}</span>
+                    <span className="font-medium text-right">{customer?.username ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Email</span>
-                    <span className="font-medium text-right">{customer.email}</span>
+                    <span className="font-medium text-right">{customer?.email ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Telepon</span>
-                    <span className="font-medium text-right">{customer.phone}</span>
+                    <span className="font-medium text-right">{customer?.phone ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">NIK</span>
-                    <span className="font-medium text-right">{customer.nik}</span>
+                    <span className="font-medium text-right">{customer?.nik ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">NPWP</span>
-                    <span className="font-medium text-right">{customer.npwp}</span>
+                    <span className="font-medium text-right">{customer?.npwp ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Tempat/Tgl Lahir</span>
                     <span className="font-medium text-right">
-                      {customer.birth_place}, {customer.birth_date}
+                      {customer?.birthPlace ?? "-"}, {customer?.birthDate ?? "-"}
                     </span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Jenis Kelamin</span>
-                    <span className="font-medium text-right">{customer.gender}</span>
+                    <span className="font-medium text-right">{customer?.gender ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Status</span>
-                    <span className="font-medium text-right">{customer.marital_status}</span>
+                    <span className="font-medium text-right">{customer?.maritalStatus ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Alamat</span>
                     <span className="font-medium text-right w-[55%] text-right">
-                      {customer.address}, {customer.sub_district}, {customer.district}, {customer.city}
+                      {customer?.address ?? "-"}, {customer?.city ?? "-"}
                     </span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Provinsi</span>
-                    <span className="font-medium text-right">{customer.province}</span>
+                    <span className="font-medium text-right">{customer?.province ?? "-"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Kode Pos</span>
-                    <span className="font-medium text-right">{customer.postal_code}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2 mt-2">
-                    <span className="text-muted-foreground">Credit Score (OJK)</span>
-                    <span
-                      className={`font-medium text-xs px-2 py-0.5 rounded-full ${getCreditStatusColor(
-                        customer.credit_status
-                      )}`}
-                    >
-                      {customer.credit_status} (Kode {customer.credit_score})
-                    </span>
+                    <span className="font-medium text-right">{customer?.postalCode ?? "-"}</span>
                   </div>
                 </div>
               </div>
@@ -616,33 +604,23 @@ export default function ApprovalDetailMockup(): JSX.Element {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Pekerjaan</span>
-                    <span className="font-medium text-right">{customer.occupation}</span>
+                    <span className="font-medium text-right">{customer?.occupation ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Pendapatan Bulanan</span>
-                    <span className="font-medium text-right">Rp {customer.monthly_income}</span>
+                    <span className="font-medium text-right">
+                      Rp {customer?.monthlyIncome?.toLocaleString("id-ID") ?? "-"}
+                    </span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Nama Perusahaan</span>
-                    <span className="font-medium text-right">{customer.company_name}</span>
+                    <span className="font-medium text-right">{customer?.companyName ?? "-"}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Alamat Perusahaan</span>
                     <span className="font-medium text-right w-[55%] text-right">
-                      {customer.company_address}, {customer.company_subdistrict}, {customer.company_district}
+                      {customer?.companyAddress ?? "-"}
                     </span>
-                  </div>
-                  <div className="flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Kota</span>
-                    <span className="font-medium text-right">{customer.company_city}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Provinsi</span>
-                    <span className="font-medium text-right">{customer.company_province}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kode Pos</span>
-                    <span className="font-medium text-right">{customer.company_postal_code}</span>
                   </div>
                 </div>
               </div>
@@ -652,20 +630,14 @@ export default function ApprovalDetailMockup(): JSX.Element {
 
         {/* === Dokumen Pendukung === */}
         {customer && (
-          <section
-            className="border rounded-2xl p-5 bg-white shadow-sm"
-            style={{ borderColor: colors.gray + "33" }}
-          >
+          <section className="border rounded-2xl p-5 bg-white shadow-sm">
             <h2 className="font-semibold text-black text-lg mb-4 flex items-center gap-2">
               <FileText className="h-6 w-6 text-[#3FD8D4]" /> Dokumen Pendukung
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* KTP */}
               <div className="border rounded-xl p-5 shadow-sm bg-gray-50 flex items-center justify-between">
-                <p className="font-semibold text-gray-800 text-base">
-                  Kartu Tanda Penduduk (KTP)
-                </p>
+                <p className="font-semibold text-gray-800 text-base">Kartu Tanda Penduduk (KTP)</p>
                 <Button
                   onClick={() => setOpenKtp(true)}
                   variant="outline"
@@ -675,11 +647,8 @@ export default function ApprovalDetailMockup(): JSX.Element {
                 </Button>
               </div>
 
-              {/* Slip Gaji */}
               <div className="border rounded-xl p-5 shadow-sm bg-gray-50 flex items-center justify-between">
-                <p className="font-semibold text-gray-800 text-base">
-                  Slip Gaji
-                </p>
+                <p className="font-semibold text-gray-800 text-base">Slip Gaji</p>
                 <Button
                   onClick={() => setOpenSlip(true)}
                   variant="outline"
@@ -689,21 +658,11 @@ export default function ApprovalDetailMockup(): JSX.Element {
                 </Button>
               </div>
             </div>
-            
-            {/* Dialogs */}
-            <ViewDocumentDialog
-              open={openKtp}
-              onOpenChange={setOpenKtp}
-              title="Kartu Tanda Penduduk"
-              imageUrl={customer.ktp || null}
-            />
-            <ViewDocumentDialog
-              open={openSlip}
-              onOpenChange={setOpenSlip}
-              title="Slip Gaji"
-              imageUrl={customer.slip || null}
-            />
+
+            <ViewDocumentDialog open={openKtp} onOpenChange={setOpenKtp} title="KTP" imageUrl={ktp || null} />
+            <ViewDocumentDialog open={openSlip} onOpenChange={setOpenSlip} title="Slip Gaji" imageUrl={slip || null} />
           </section>
+
         )}
 
         {/* Control Panel */}
@@ -719,9 +678,9 @@ export default function ApprovalDetailMockup(): JSX.Element {
             </div>
 
             {/* === SLIDER HARGA PROPERTI, DP, JANGKA WAKTU === */}
-            <div className="space-y-6 mb-4">
+            {/* <div className="space-y-6 mb-4"> */}
               {/* Harga Properti */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-gray-700 font-medium">Harga Properti</label>
                   <span className="font-semibold text-gray-900">
@@ -737,10 +696,10 @@ export default function ApprovalDetailMockup(): JSX.Element {
                   onChange={(e) => setHargaProperti(Number(e.target.value))}
                   className="w-full accent-[#3FD8D4] cursor-pointer"
                 />
-              </div>
+              </div> */}
 
               {/* DP */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-gray-700 font-medium">Uang Muka (DP)</label>
                   <span className="font-semibold text-gray-900">
@@ -762,8 +721,8 @@ export default function ApprovalDetailMockup(): JSX.Element {
                   onChange={(e) => setPersenDP(Number(e.target.value))}
                   className="w-full accent-[#3FD8D4] cursor-pointer"
                 />
-              </div>
-            </div>
+              </div> */}
+            {/* </div> */}
 
             {/* === PENYESUAIAN MULTI-RATE BARU === */}
             <div
