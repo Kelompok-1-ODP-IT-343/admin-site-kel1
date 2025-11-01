@@ -29,7 +29,7 @@ export async function loginBlueprint({
   }
 }
 
-// erifikasi OTP → simpan token
+// verifikasi OTP → simpan token
 export async function verifyOtpBlueprint({
   identifier,
   otp,
@@ -53,6 +53,7 @@ export async function verifyOtpBlueprint({
     // ✅ Token baru diset di sini setelah OTP benar
     if (data.data?.token) {
       document.cookie = `token=${data.data.token}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `refreshToken=${data.data.refreshToken}; path=/; max-age=86400; SameSite=Lax`;
     }
 
     return { success: true, data: data.data };
