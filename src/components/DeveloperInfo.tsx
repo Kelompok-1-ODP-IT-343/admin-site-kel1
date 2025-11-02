@@ -233,10 +233,10 @@ export default function DeveloperTable() {
 
                       await navigator.clipboard.writeText(formatted.trim());
 
-                      alert("Developer detail berhasil disalin ke clipboard!");
+                      toast.success("Developer detail berhasil disalin ke clipboard!");
                     } catch (err) {
                       console.error("Gagal copy developer detail:", err);
-                      alert("Gagal menyalin developer detail.");
+                      toast.error("Gagal menyalin developer detail.");
                     }
                   }}
                 >

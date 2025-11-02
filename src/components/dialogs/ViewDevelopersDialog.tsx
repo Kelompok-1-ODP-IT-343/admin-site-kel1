@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 import { UiDeveloper, uiToApi, apiToUi } from "@/lib/developer-mapper";
 import { getDeveloperById, updateDeveloper } from "@/services/developers";
+import { toast } from "sonner";
 
 function generateInitials(name: string): string {
   const cleanName = name.replace(/^(PT\.?\s+|CV\.?\s+)/i, "").trim();
@@ -79,15 +80,17 @@ export default function ViewDeveloperDialog({
     if (!editedData) return;
     try {
       setSaving(true);
+      toast.loading("Menyimpan perubahan developer...", { id: "save-developer" });
       const payload = uiToApi(editedData);
       const res = await updateDeveloper(editedData.id, payload);
       const updated = apiToUi(res?.data); // asumsi API balikin entity updated
       setEditedData(updated);
       setIsEditing(false);
       onUpdated?.(updated); // kabari parent (tabel) untuk sinkron
+      toast.success("Perubahan developer berhasil disimpan", { id: "save-developer" });
     } catch (err) {
       console.error("Update failed:", err);
-      alert("Gagal menyimpan perubahan developer.");
+      toast.error("Gagal menyimpan perubahan developer.", { id: "save-developer" });
     } finally {
       setSaving(false);
     }
