@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Info, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { assignAdmins, getPengajuanDetail } from "@/services/approvekpr";
+import { assignAdmins, getPengajuanDetail, getApprovers, Approver } from "@/services/approvekpr";
 import { toast } from "sonner";
 
 export default function AssignApprovalDialog() {
@@ -16,6 +16,8 @@ export default function AssignApprovalDialog() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [developerName, setDeveloperName] = useState<string>("-");
   const [loadingDev, setLoadingDev] = useState<boolean>(false);
+  const [approvers, setApprovers] = useState<Approver[]>([]);
+  const [loadingApprovers, setLoadingApprovers] = useState<boolean>(false);
 
   useEffect(() => {
     const applicationId = Number(searchParams.get("id"));
@@ -35,6 +37,21 @@ export default function AssignApprovalDialog() {
     fetchDetail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  useEffect(() => {
+    const fetchApprovers = async () => {
+      setLoadingApprovers(true);
+      try {
+        const list = await getApprovers();
+        setApprovers(list);
+      } catch (e) {
+        setApprovers([]);
+      } finally {
+        setLoadingApprovers(false);
+      }
+    };
+    fetchApprovers();
+  }, []);
 
   const handleSubmit = async () => {
     const applicationId = Number(searchParams.get("id"));
@@ -100,10 +117,12 @@ export default function AssignApprovalDialog() {
               onChange={(e) => setVerifikator2(e.target.value)}
               className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-white"
             >
-              <option value="">-- Pilih Admin 1 --</option>
-              {/* Nilai option memakai ID admin sesuai backend */}
-              <option value="56">Admin 1</option>
-              <option value="55">Admin 2</option>
+              <option value="">{loadingApprovers ? "Memuat approver..." : "-- Pilih Approver --"}</option>
+              {approvers.map((a) => (
+                <option key={a.id} value={String(a.id)}>
+                  {a.fullName}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -116,10 +135,12 @@ export default function AssignApprovalDialog() {
               onChange={(e) => setVerifikator3(e.target.value)}
               className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-white"
             >
-              <option value="">-- Pilih Admin 2 --</option>
-              {/* Nilai option memakai ID admin sesuai backend */}
-              <option value="55">Admin 2</option>
-              <option value="56">Admin 1</option>
+              <option value="">{loadingApprovers ? "Memuat approver..." : "-- Pilih Approver --"}</option>
+              {approvers.map((a) => (
+                <option key={a.id} value={String(a.id)}>
+                  {a.fullName}
+                </option>
+              ))}
             </select>
           </div>
 

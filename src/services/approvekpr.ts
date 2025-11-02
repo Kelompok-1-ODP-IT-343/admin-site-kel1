@@ -87,3 +87,23 @@ export async function assignAdmins(payload: AssignAdminsPayload) {
   }
 }
 
+// 🔹 Ambil seluruh approver untuk pengisian select
+export type Approver = {
+  id: number
+  fullName: string
+  email?: string
+  roleName?: string
+  status?: string
+}
+
+export async function getApprovers(): Promise<Approver[]> {
+  try {
+    const res = await coreApi.get("/admin/approver")
+    const list = Array.isArray(res.data?.data) ? res.data.data : []
+    return list as Approver[]
+  } catch (error) {
+    console.error("❌ Error fetching approvers:", error)
+    return []
+  }
+}
+
