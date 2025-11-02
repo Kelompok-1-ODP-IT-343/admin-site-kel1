@@ -16,6 +16,14 @@ import {
 } from "@tanstack/react-table"
 import { ArrowUpDown, Settings2, ChevronDown, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
@@ -62,6 +70,10 @@ export default function CustomerTableDemo() {
   const [showDialog, setShowDialog] = React.useState(false)
   const [showPaymentDialog, setShowPaymentDialog] = React.useState(false)
   const [selectedPaymentId, setSelectedPaymentId] = React.useState<string | null>(null)
+
+  // State untuk dialog konfirmasi delete
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false)
+  const [deleteTarget, setDeleteTarget] = React.useState<Customer | null>(null)
 
   const handleViewCustomer = async (customer: Customer) => {
     try {
@@ -200,20 +212,9 @@ export default function CustomerTableDemo() {
 
 
                 <DropdownMenuItem
-                  onClick={async () => {
-                    const confirmDelete = confirm(`Yakin ingin menghapus user ini?`)
-                    if (!confirmDelete) return
-                    toast.promise(
-                      deleteUser(customer.id),
-                      {
-                        loading: "Menghapus user...",
-                        success: () => {
-                          setData((prev) => prev.filter((u) => u.id !== customer.id))
-                          return `${customer.name} berhasil dihapus`
-                        },
-                        error: "❌ Gagal menghapus user. Coba lagi nanti.",
-                      },
-                    )
+                  onClick={() => {
+                    setDeleteTarget(customer)
+                    setConfirmDeleteOpen(true)
                   }}
                   className="text-red-500 focus:text-red-600"
                 >
@@ -403,6 +404,53 @@ export default function CustomerTableDemo() {
         onOpenChange={setShowPaymentDialog}
         customerId={selectedPaymentId}
       /> */}
+
+      {/* Dialog konfirmasi delete */}
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hapus User</DialogTitle>
+            <DialogDescription>
+              {deleteTarget
+                ? `Anda yakin ingin menghapus ${deleteTarget.name} (${deleteTarget.email})? Tindakan ini tidak dapat dibatalkan.`
+                : "Anda yakin ingin menghapus user ini?"}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDeleteOpen(false)
+                setDeleteTarget(null)
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!deleteTarget) return
+                setConfirmDeleteOpen(false)
+                const target = deleteTarget
+                setDeleteTarget(null)
+                toast.promise(
+                  deleteUser(target.id),
+                  {
+                    loading: "Menghapus user...",
+                    success: () => {
+                      setData((prev) => prev.filter((u) => u.id !== target.id))
+                      return `${target.name} berhasil dihapus`
+                    },
+                    error: "❌ Gagal menghapus user. Coba lagi nanti.",
+                  }
+                )
+              }}
+            >
+              Hapus
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
