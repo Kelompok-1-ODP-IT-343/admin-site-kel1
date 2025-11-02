@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Customer } from "@/components/data/customers";
-import { useState } from "react";
+import { Customer, getCustomerById, updateCustomer } from "@/services/customers";
+import { useEffect, useState } from "react";
+import { toast } from "sonner"
 
 const getCreditStatusColor = (status: string) => {
   switch (status) {
@@ -21,6 +22,26 @@ const getCreditStatusColor = (status: string) => {
     default: return "text-gray-600 bg-gray-100";
   }
 };
+const nonEditableFields = [
+  // Profil (tidak bisa diubah)
+  "nik", // 🧱 data identitas, backend tidak izinkan update
+  "npwp", // 🧱 data pajak, backend tidak izinkan update
+  "sub_district",
+  "district",
+  "ktp",
+  "slip",
+  "credit_score",
+  "credit_status",
+
+  // Perusahaan (tidak ada di backend)
+  "company_postal_code",
+  "company_address",
+  "company_district",
+  "company_subdistrict",
+  "company_city",
+  "company_province",
+];
+
 
 export default function ViewCustomerDialog({
   open,
@@ -33,17 +54,61 @@ export default function ViewCustomerDialog({
 }) {
   if (!customer) return null;
 
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({ ...customer });
+  const [loading, setLoading] = useState(false);
+
+  // Saat dialog dibuka, ambil detail terbaru dari API menggunakan id
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchLatest() {
+      if (!open || !customer?.id) return;
+      try {
+        setLoading(true);
+        const fresh = await getCustomerById(customer.id);
+        if (!cancelled && fresh) {
+          setEditedData({ ...fresh });
+        }
+      } catch (err) {
+        console.error("❌ Gagal mengambil detail customer:", err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchLatest();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, customer?.id]);
 
   const handleChange = (field: string, value: string) => {
     setEditedData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    console.log("Data updated:", editedData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!customer?.id) return;
+    try {
+      setLoading(true);
+      toast.loading("Menyimpan perubahan...", { id: "save-customer" }); // ⏳ loading
+
+      const updated = await updateCustomer(customer.id, editedData);
+
+      if (updated) {
+        setEditedData({ ...updated });
+        setIsEditing(false);
+        toast.success("Data nasabah berhasil disimpan", { id: "save-customer" }); // ✅ sukses
+      } else {
+        toast.error("❌ Gagal memperbarui data nasabah", { id: "save-customer" }); // ❌ gagal logic
+      }
+    } catch (err) {
+      console.error("❌ Error saat menyimpan perubahan:", err);
+      toast.error("Terjadi kesalahan saat menyimpan data.", { id: "save-customer" }); // ❌ error try-catch
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,6 +144,7 @@ export default function ViewCustomerDialog({
                       value={(editedData as any)[key]}
                       onChange={(e) => handleChange(key, e.target.value)}
                       className="w-[55%] h-7 text-sm"
+                      disabled={nonEditableFields.includes(key)}
                     />
                   ) : (
                     <span className="font-medium text-right w-[55%] text-right">
@@ -102,6 +168,7 @@ export default function ViewCustomerDialog({
                       value={editedData.birth_date}
                       onChange={(e) => handleChange("birth_date", e.target.value)}
                       className="h-7 text-sm w-[50%]"
+                      
                     />
                   </div>
                 ) : (
@@ -123,6 +190,7 @@ export default function ViewCustomerDialog({
                       value={(editedData as any)[key]}
                       onChange={(e) => handleChange(key, e.target.value)}
                       className="w-[55%] h-7 text-sm"
+                      disabled={nonEditableFields.includes(key)}
                     />
                   ) : (
                     <span className="font-medium text-right w-[55%] text-right">
@@ -160,6 +228,7 @@ export default function ViewCustomerDialog({
                       value={(editedData as any)[key]}
                       onChange={(e) => handleChange(key, e.target.value)}
                       className="w-[55%] h-7 text-sm"
+                      disabled={nonEditableFields.includes(key)}
                     />
                   ) : (
                     <span className="font-medium text-right w-[55%] text-right">
@@ -201,6 +270,7 @@ export default function ViewCustomerDialog({
                       value={(editedData as any)[key]}
                       onChange={(e) => handleChange(key, e.target.value)}
                       className="w-[55%] h-7 text-sm"
+                      disabled={nonEditableFields.includes(key)}
                     />
                   ) : (
                     <span className="font-medium text-right w-[55%] text-right">
@@ -239,6 +309,7 @@ export default function ViewCustomerDialog({
                       value={(editedData as any)[key]}
                       onChange={(e) => handleChange(key, e.target.value)}
                       className="w-[55%] h-7 text-sm"
+                      disabled={nonEditableFields.includes(key)}
                     />
                   ) : (
                     <span className="font-medium text-right w-[55%] text-right">
@@ -259,8 +330,8 @@ export default function ViewCustomerDialog({
             </Button>
           ) : (
             <>
-              <Button size="sm" onClick={handleSave}>
-                Save
+              <Button size="sm" onClick={handleSave} disabled={loading}>
+                {loading ? "Saving..." : "Save"}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
                 Cancel

@@ -159,57 +159,45 @@ export default function CustomerTableDemo() {
                 <DropdownMenuItem
                   onClick={async () => {
                     try {
-                      // 🔹 ambil ulang data detail dari API (biar selalu up to date)
-                      const res = await getAllUsers();
-                      const detail = res.find((u: any) => u.id === customer.id);
+                      const detail = await getCustomerById(customer.id);
 
                       if (!detail) {
-                        alert("Customer tidak ditemukan!");
+                        toast.error("Customer tidak ditemukan!");
                         return;
                       }
 
-                      // 🔹 format teks agar mudah dibaca
                       const formatted = `
-                        👤 *${detail.fullName}* (${detail.username})
-                        📧 Email: ${detail.email}
-                        📞 Phone: ${detail.phone}
-                        🏷️ Role: ${detail.roleName}
-                        📊 Status: ${detail.status}
+                👤 *${detail.name}* (${detail.username})
+                📧 Email: ${detail.email}
+                📞 Phone: ${detail.phone}
 
-                        🆔 NIK: ${detail.nik}
-                        🧾 NPWP: ${detail.npwp}
-                        🎂 Lahir: ${detail.birthPlace}, ${detail.birthDate}
-                        🚻 Gender: ${detail.gender}
-                        💍 Marital Status: ${detail.maritalStatus}
+                🆔 NIK: ${detail.nik}
+                🧾 NPWP: ${detail.npwp}
+                🎂 Lahir: ${detail.birth_place}, ${detail.birth_date}
+                🚻 Gender: ${detail.gender}
+                💍 Status: ${detail.marital_status}
 
-                        🏠 Alamat: ${detail.address}
-                        🏙️ Kota: ${detail.city}
-                        🌆 Provinsi: ${detail.province}
-                        📮 Kode Pos: ${detail.postalCode}
+                🏠 Alamat: ${detail.address}
+                🏙️ Kota: ${detail.city}
+                🌆 Provinsi: ${detail.province}
+                📮 Kode Pos: ${detail.postal_code}
 
-                        💼 Pekerjaan: ${detail.occupation}
-                        🏢 Perusahaan: ${detail.companyName}
-                        💰 Penghasilan Bulanan: Rp${detail.monthlyIncome.toLocaleString("id-ID")}
-                        📈 Pengalaman Kerja: ${detail.workExperience} tahun
-                        🏗️ Developer: ${detail.developer ? "Ya" : "Tidak"}
-
-                        ✅ Email Verified: ${detail.emailVerified ? "Ya" : "Tidak"}
-                        📱 Phone Verified: ${detail.phoneVerified ? "Ya" : "Tidak"}
-                        🕒 Last Login: ${detail.lastLoginAt ?? "-"}
-                        📆 Dibuat: ${detail.createdAt}
-                        🔄 Diperbarui: ${detail.updatedAt}
-                      `;
+                💼 Pekerjaan: ${detail.occupation}
+                🏢 Perusahaan: ${detail.company_name}
+                💰 Penghasilan Bulanan: Rp${Number(detail.monthly_income).toLocaleString("id-ID")}
+                `;
 
                       await navigator.clipboard.writeText(formatted.trim());
-                      alert("Customer detail berhasil disalin ke clipboard!");
+                      toast.success("Customer detail berhasil disalin ke clipboard!");
                     } catch (err) {
-                      console.error("Gagal copy customer detail:", err);
-                      alert("Gagal menyalin customer detail.");
+                      console.error("❌ Gagal copy customer detail:", err);
+                      toast.error("Gagal menyalin customer detail.");
                     }
                   }}
                 >
                   Copy Customer Detail
                 </DropdownMenuItem>
+
 
                 <DropdownMenuItem
                   onClick={async () => {

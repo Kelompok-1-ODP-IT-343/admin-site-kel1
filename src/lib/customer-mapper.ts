@@ -39,3 +39,26 @@ export function apiToUi(api: any): Customer {
     monthly_income: String(api.monthlyIncome ?? "0"),
   }
 }
+
+// Ubah data UI ke bentuk payload API
+export function uiToApi(ui: Customer) {
+  return {
+    fullName: ui.name,
+    username: ui.username,
+    email: ui.email,
+    phone: ui.phone,
+    nik: ui.nik,
+    npwp: ui.npwp,
+    birthDate: ui.birth_date,
+    birthPlace: ui.birth_place,
+    gender: ui.gender,
+    maritalStatus: ui.marital_status,
+    address: ui.address,
+    city: ui.city,
+    province: ui.province,
+    postalCode: ui.postal_code,
+    occupation: ui.occupation,
+    companyName: ui.company_name,
+    monthlyIncome: ui.monthly_income,
+  }
+}

@@ -1,6 +1,6 @@
 // src/services/customer.ts
 import coreApi from "@/lib/coreApi"
-import { apiToUi } from "@/lib/customer-mapper"
+import { apiToUi, uiToApi } from "@/lib/customer-mapper"
 
 export type Customer = {
   id: string
@@ -46,8 +46,11 @@ export async function getAllUsers() {
 
     console.log("➡️ STATUS:", res.status)
     console.log("📦 HASIL API:", res.data)
-
-    return res.data?.data?.data || []
+    // Beberapa endpoint mengembalikan bentuk berbeda:
+    // { data: { data: [] } } atau { data: [] }
+    const payload = res.data
+    const list = payload?.data?.data ?? payload?.data ?? []
+    return Array.isArray(list) ? list : []
   } catch (error) {
     console.error("❌ Error fetching users:", error)
     return []
@@ -78,6 +81,24 @@ export async function getCustomerById(id: string | number) {
     return raw ? apiToUi(raw) : null
   } catch (error) {
     console.error("❌ Error getCustomerById:", error)
+    return null
+  }
+}
+
+// 🔹 Update customer (PUT /admin/users/{id})
+export async function updateCustomer(id: string | number, ui: Customer) {
+  try {
+    const payload = uiToApi(ui)
+    const res = await coreApi.put(`/admin/users/${id}`, payload)
+    const raw = res.data?.data
+    // Kembalikan versi UI agar langsung dipakai kembali di komponen
+    return raw ? apiToUi(raw) : null
+  } catch (error: any) {
+    if (error.response) {
+      console.error("❌ Error updateCustomer:", error.response.data)
+    } else {
+      console.error("❌ Error updateCustomer:", error)
+    }
     return null
   }
 }
