@@ -85,8 +85,12 @@ export default function AssignApprovalDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-[#3FD8D4] hover:bg-[#3FD8D4]/80 text-white shadow font-medium">
+        <Button
+          className="group bg-[#FF6600] hover:bg-[#e85c00] text-white font-semibold
+                    rounded-xl px-6 py-3 shadow-md transition-all flex items-center gap-2"
+        >
           Assign To
+          <Send className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
         </Button>
       </DialogTrigger>
 
@@ -149,11 +153,15 @@ export default function AssignApprovalDialog() {
             <Button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex items-center gap-2 bg-[#3FD8D4] hover:bg-[#3FD8D4]/80 text-white rounded-2xl px-5 py-3"
+              className="group flex items-center gap-2 bg-[#FF6600] hover:bg-[#e85c00] 
+                        text-white font-semibold rounded-xl px-6 py-3 shadow-md 
+                        transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Send className="h-4 w-4" /> {submitting ? "Mengirim..." : "Kirim"}
+              {submitting ? "Mengirim..." : "Submit"}
+              <Send className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
             </Button>
           </div>
+
 
           {feedback && (
             <p className="text-xs mt-2 text-gray-700">{feedback}</p>
