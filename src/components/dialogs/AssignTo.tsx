@@ -26,7 +26,7 @@ export default function AssignApprovalDialog() {
       setLoadingDev(true);
       try {
         const data = await getPengajuanDetail(applicationId);
-        const name = data?.developerInfo?.companyName || "-";
+        const name = data?.developerName ?? data?.developerInfo?.companyName ?? "-";
         setDeveloperName(name);
       } catch (e) {
         setDeveloperName("-");
