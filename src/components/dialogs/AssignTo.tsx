@@ -3,9 +3,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Info, Send } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { assignAdmins } from "@/services/approvekpr";
+import { assignAdmins, getPengajuanDetail } from "@/services/approvekpr";
 import { toast } from "sonner";
 
 export default function AssignApprovalDialog() {
@@ -14,6 +14,27 @@ export default function AssignApprovalDialog() {
   const [verifikator3, setVerifikator3] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [developerName, setDeveloperName] = useState<string>("-");
+  const [loadingDev, setLoadingDev] = useState<boolean>(false);
+
+  useEffect(() => {
+    const applicationId = Number(searchParams.get("id"));
+    if (!applicationId) return;
+    const fetchDetail = async () => {
+      setLoadingDev(true);
+      try {
+        const data = await getPengajuanDetail(applicationId);
+        const name = data?.developerInfo?.companyName || "-";
+        setDeveloperName(name);
+      } catch (e) {
+        setDeveloperName("-");
+      } finally {
+        setLoadingDev(false);
+      }
+    };
+    fetchDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleSubmit = async () => {
     const applicationId = Number(searchParams.get("id"));
@@ -64,7 +85,9 @@ export default function AssignApprovalDialog() {
             <p className="font-medium text-gray-700 mb-1">Persetujuan 1</p>
             <p className="text-gray-600">
               Developer:{" "}
-              <span className="font-semibold text-gray-900">PT Ciputra Development Tbk</span>
+              <span className="font-semibold text-gray-900">
+                {loadingDev ? "Memuat..." : developerName}
+              </span>
             </p>
           </div>
 
