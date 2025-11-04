@@ -14,7 +14,11 @@ spec:
     namespace: griya-app-prod
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      prune: true          
+      selfHeal: true       
     syncOptions:
       - CreateNamespace=true
+      - PruneLast=true     
+      - Validate=true      
+      - ApplyOutOfSyncOnly=true  
+  revisionHistoryLimit: 3       
