@@ -221,3 +221,17 @@ export async function updateProperty(id: string | number, data: Partial<Property
     return { success: false, message: error.message };
   }
 }
+
+// 🔹 Hapus properti berdasarkan ID
+export async function deleteProperty(id: string | number) {
+  try {
+    const res = await coreApi.delete(`/admin/properties/${id}`);
+    if (res.status >= 200 && res.status < 300) {
+      return { success: true };
+    }
+    return { success: false, message: res.data?.message || "Gagal menghapus properti" };
+  } catch (error: any) {
+    console.error(`❌ Error deleteProperty(${id}):`, error);
+    return { success: false, message: error.message };
+  }
+}

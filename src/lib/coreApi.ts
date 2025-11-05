@@ -83,10 +83,7 @@ coreApi.interceptors.response.use(
         const refreshToken = getTokenFromCookie("refreshToken");
         if (!refreshToken) throw new Error("No refresh token");
 
-        const res = await axios.post(
-          "http://local-dev.satuatap.my.id/api/v1/auth/refresh-token",
-          { refreshToken }
-        );
+        const res = await coreApi.post("/auth/refresh-token", { refreshToken });
 
         const newToken = res.data?.data?.token;
         const newRefresh = res.data?.data?.refreshToken;

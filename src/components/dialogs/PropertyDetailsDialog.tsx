@@ -83,7 +83,7 @@ export default function ViewPropertyDialog({
       console.log("📤 PUT PAYLOAD:", payload);
 
       if (result?.success) {
-        toast.success("✅ Property updated successfully");
+        toast.success("✅ Data properti berhasil diperbarui");
         setIsEditing(false);
         // Kirim entity updated ke parent untuk optimistic update
         const updatedEntity = result?.data ?? {

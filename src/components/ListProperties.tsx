@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
 import {
   ColumnDef,
   flexRender,
@@ -11,6 +12,14 @@ import {
   SortingState,
 } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import {
   Table,
   TableBody,
@@ -30,7 +39,7 @@ import { Input } from "@/components/ui/input"
 // import { properties, Property } from "@/components/data/properties"
 // import { getAdminProperties } from "@/services/properties"
 // import { getAdminProperties, Property } from "@/services/properties"
-import { Property, getAdminProperties } from "@/services/properties"
+import { Property, getAdminProperties, deleteProperty } from "@/services/properties"
 
 
 
@@ -46,6 +55,8 @@ export default function PropertiesList() {
   const [filter, setFilter] = React.useState("")
   const [selectedProperty, setSelectedProperty] = React.useState<Property | null>(null)
   const [showDialog, setShowDialog] = React.useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false)
+  const [deleteTarget, setDeleteTarget] = React.useState<Property | null>(null)
   const fetchData = async () => {
     try {
       setLoading(true)
@@ -82,7 +93,8 @@ export default function PropertiesList() {
   }
 
   const handleDelete = (property: Property) => {
-    console.log("Delete:", property.id)
+    setDeleteTarget(property)
+    setConfirmDeleteOpen(true)
   }
 
 
@@ -263,6 +275,56 @@ export default function PropertiesList() {
           />
         </React.Suspense>
       )}
+
+      {/* Dialog Konfirmasi Hapus Properti */}
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hapus Properti</DialogTitle>
+            <DialogDescription>
+              {deleteTarget
+                ? `Anda yakin ingin menghapus "${deleteTarget.title}"? Tindakan ini tidak dapat dibatalkan.`
+                : "Anda yakin ingin menghapus properti ini?"}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDeleteOpen(false)
+                setDeleteTarget(null)
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!deleteTarget) return
+                setConfirmDeleteOpen(false)
+                const target = deleteTarget
+                setDeleteTarget(null)
+                toast.promise(
+                  deleteProperty(target.id),
+                  {
+                    loading: "Menghapus properti...",
+                    success: (res) => {
+                      if (res?.success) {
+                        setData((prev) => prev.filter((p) => p.id !== target.id))
+                        return `${target.title} berhasil dihapus`
+                      }
+                      throw new Error(res?.message || "Gagal menghapus properti")
+                    },
+                    error: "❌ Gagal menghapus properti. Coba lagi nanti.",
+                  }
+                )
+              }}
+            >
+              Hapus
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
