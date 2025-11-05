@@ -3,12 +3,14 @@
 "use client";
 
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Property, updateProperty, filterEditableFields } from "@/services/properties";
+import { fetchDevelopers, getDeveloperById } from "@/services/developers";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 
 export default function ViewPropertyDialog({
@@ -20,13 +22,54 @@ export default function ViewPropertyDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   property: Property | null;
-  onUpdated?: () => void;
+  onUpdated?: (updated?: any) => void;
 }) {
   if (!property) return null;
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({ ...property });
+  const [developers, setDevelopers] = useState<Array<{ id: number; company_name: string }>>([]);
+
+  // Fetch developer list for dropdown
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await fetchDevelopers();
+        // Normalisasi minimal ke {id, company_name}
+        const normalized = Array.isArray(list)
+          ? list.map((d: any) => ({ id: Number(d.id), company_name: String(d.company_name || d.name || d.companyName || "-") }))
+          : [];
+        setDevelopers(normalized);
+      } catch (e) {
+        console.error("❌ Gagal memuat developers:", e);
+        setDevelopers([]);
+      }
+    })();
+  }, []);
+
+  // Saat dialog dibuka untuk properti tertentu, pastikan kita tahu developer yang aktif
+  useEffect(() => {
+    (async () => {
+      try {
+        const devId = (editedData as any).developerId || (editedData as any).developer_id;
+        if (devId) {
+          const res = await getDeveloperById(devId);
+          const data = res?.data || res; // beberapa endpoint bisa bungkus dalam {data}
+          const devName = data?.companyName || data?.company_name || (editedData as any).developer_name;
+          setEditedData((prev: any) => ({
+            ...prev,
+            developerId: Number(data?.id ?? devId),
+            developerName: devName,
+            developer_name: devName,
+          }));
+        }
+      } catch (e) {
+        console.error("❌ Gagal mengambil developer aktif:", e);
+      }
+    })();
+    // jalankan ulang bila property berubah
+  }, [property?.id]);
 
   const handleChange = (field: string, value: string | number) => {
     setEditedData((prev) => ({ ...prev, [field]: value }));
@@ -42,7 +85,13 @@ export default function ViewPropertyDialog({
       if (result?.success) {
         toast.success("✅ Property updated successfully");
         setIsEditing(false);
-        onUpdated?.(); // 🆕 panggil callback dari parent
+        // Kirim entity updated ke parent untuk optimistic update
+        const updatedEntity = result?.data ?? {
+          id: editedData.id,
+          developerId: (payload as any).developerId ?? editedData.developerId,
+          developerName: (payload as any).developerName ?? editedData.developerName ?? editedData.developer_name,
+        };
+        onUpdated?.(updatedEntity);
       } else {
         toast.error(result?.message || "Gagal update property");
       }
@@ -119,11 +168,59 @@ export default function ViewPropertyDialog({
                   <div key={key} className="flex justify-between items-center gap-3">
                     <strong className="min-w-[110px]">{label}:</strong>
                     {isEditing ? (
-                      <Input
-                        value={(editedData as any)[key]}
-                        onChange={(e) => handleChange(key, e.target.value)}
-                        className="h-7 text-sm max-w-[180px] sm:max-w-[140px]"
-                      />
+                      key === "developer_name" ? (
+                        <Select
+                          value={editedData.developerId ? String(editedData.developerId) : undefined}
+                          onValueChange={async (val) => {
+                            const idNum = Number(val);
+                            try {
+                              const res = await getDeveloperById(idNum);
+                              const data = res?.data || res;
+                              const devName = data?.companyName || data?.company_name || "-";
+                              setEditedData((prev: any) => ({
+                                ...prev,
+                                developerId: Number(data?.id ?? idNum),
+                                developerName: devName,
+                                developer_name: devName,
+                              }));
+                            } catch (e) {
+                              console.error("❌ Gagal mengambil detail developer terpilih:", e);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-sm max-w-[180px] sm:max-w-[140px]">
+                            <SelectValue placeholder="Pilih developer" />
+                          </SelectTrigger>
+                          <SelectContent position="popper" align="end">
+                            {developers.map((d) => (
+                              <SelectItem key={d.id} value={String(d.id)}>
+                                {d.company_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : key === "property_type" ? (
+                        <Select
+                          value={(editedData as any).property_type ? String((editedData as any).property_type) : undefined}
+                          onValueChange={(val) => handleChange("property_type", val)}
+                        >
+                          <SelectTrigger className="h-7 text-sm max-w-[180px] sm:max-w-[140px]">
+                            <SelectValue placeholder="Pilih tipe" />
+                          </SelectTrigger>
+                          <SelectContent position="popper" align="end">
+                            <SelectItem value="rumah">Rumah</SelectItem>
+                            <SelectItem value="apartemen">Apartemen</SelectItem>
+                            <SelectItem value="ruko">Ruko</SelectItem>
+                            <SelectItem value="tanah">Tanah</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={(editedData as any)[key]}
+                          onChange={(e) => handleChange(key, e.target.value)}
+                          className="h-7 text-sm max-w-[180px] sm:max-w-[140px]"
+                        />
+                      )
                     ) : (
                       <span className="text-right w-[55%] truncate">
                         {key.includes("price")
@@ -194,6 +291,21 @@ export default function ViewPropertyDialog({
                                 placeholder="Long"
                               />
                             </div>
+                          ) : key === "certificate_type" ? (
+                            <Select
+                              value={(editedData as any).certificate_type ? String((editedData as any).certificate_type) : undefined}
+                              onValueChange={(val) => handleChange("certificate_type", val)}
+                            >
+                              <SelectTrigger className="h-7 text-sm max-w-[140px]">
+                                <SelectValue placeholder="Pilih sertifikat" />
+                              </SelectTrigger>
+                              <SelectContent position="popper" align="end">
+                                <SelectItem value="SHM">SHM</SelectItem>
+                                <SelectItem value="HGB">HGB</SelectItem>
+                                <SelectItem value="HGU">HGU</SelectItem>
+                                <SelectItem value="HP">HP</SelectItem>
+                              </SelectContent>
+                            </Select>
                           ) : (
                             <div className="flex items-center gap-1">
                               {unit === "Rp" && <span className="text-gray-500 text-xs">Rp</span>}

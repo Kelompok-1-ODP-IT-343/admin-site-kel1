@@ -25,13 +25,25 @@ export type Property = {
   maintenanceFee: number;
   certificateType: string;
   pbbValue: number;
-  developerName: string;
-  developerId?: number;
+    developerId?: number;
+    developerName?: string;
   propertyType: string;
   imageUrl: string;
   status: string;
   features?: { featureName: string; featureValue: string }[];
   locations?: { poiName: string; distanceKm: number }[];
+
+  // === API/List snake_case compatibility (optional) ===
+  developer_name?: string;
+  property_type?: string;
+  price_per_sqm?: number;
+  land_area?: number;
+  building_area?: number;
+  year_built?: number;
+  sub_district?: string;
+  postal_code?: string;
+  pbb_value?: number;
+  image_url?: string;
 };
 
 
@@ -81,49 +93,112 @@ export async function getAdminProperties() {
     return { success: false, message: "Terjadi kesalahan saat mengambil data" }
   }
 }
-// ✅ Utility reusable untuk filter data properti yang boleh diupdate
+// ✅ Utility untuk memetakan field UI (snake_case) ke payload API (camelCase)
 export function filterEditableFields(data: any) {
-  const allowedFields = [
+  const keyMap: Record<string, string> = {
     // === BASIC ===
-    "title",
-    "description",
-    "status",
-    "propertyType",
-    "developerId",
-    "address",
-    "city",
-    "province",
-    "district",
-    "subDistrict",
-    "postalCode",
-    "latitude",
-    "longitude",
+    title: "title",
+    description: "description",
+    status: "status",
+    property_type: "propertyType",
+    propertyType: "propertyType",
+    developer_id: "developerId",
+    developerId: "developerId",
+    developer_name: "developerName",
+    developerName: "developerName",
+    address: "address",
+    city: "city",
+    province: "province",
+    district: "district",
+    sub_district: "village", // backend menggunakan 'village'
+    subDistrict: "village",
+    postal_code: "postalCode",
+    postalCode: "postalCode",
+    latitude: "latitude",
+    longitude: "longitude",
 
     // === NUMERIC FIELDS ===
-    "price",
-    "pricePerSqm",
+    price: "price",
+    price_per_sqm: "pricePerSqm",
+    pricePerSqm: "pricePerSqm",
+    bedrooms: "bedrooms",
+    bathrooms: "bathrooms",
+    floors: "floors",
+    garage: "garage",
+    year_built: "yearBuilt",
+    yearBuilt: "yearBuilt",
+    land_area: "landArea",
+    landArea: "landArea",
+    building_area: "buildingArea",
+    buildingArea: "buildingArea",
+
+    // === FINANCIAL & LEGAL ===
+    certificate_type: "certificateType",
+    certificateType: "certificateType",
+    maintenance_fee: "maintenanceFee",
+    maintenanceFee: "maintenanceFee",
+    pbb_value: "pbbValue",
+    pbbValue: "pbbValue",
+
+    // === META/OPTIONAL ===
+    image_url: "imageUrl",
+    imageUrl: "imageUrl",
+    availability_date: "availabilityDate",
+    availabilityDate: "availabilityDate",
+    handover_date: "handoverDate",
+    handoverDate: "handoverDate",
+    is_featured: "isFeatured",
+    isFeatured: "isFeatured",
+    is_kpr_eligible: "isKprEligible",
+    isKprEligible: "isKprEligible",
+    min_down_payment_percent: "minDownPaymentPercent",
+    minDownPaymentPercent: "minDownPaymentPercent",
+    max_loan_term_years: "maxLoanTermYears",
+    maxLoanTermYears: "maxLoanTermYears",
+    meta_title: "metaTitle",
+    metaTitle: "metaTitle",
+    meta_description: "metaDescription",
+    metaDescription: "metaDescription",
+    keywords: "keywords",
+  };
+
+  const numericKeys = new Set([
+    "latitude",
+    "longitude",
+    "landArea",
+    "buildingArea",
     "bedrooms",
     "bathrooms",
     "floors",
     "garage",
     "yearBuilt",
-    "landArea",
-    "buildingArea",
-
-    // === FINANCIAL & LEGAL ===
-    "certificateType",
+    "price",
+    "pricePerSqm",
     "maintenanceFee",
     "pbbValue",
-
-    // === OPTIONAL ARRAYS (kalau backend support) ===
-    "features",
-    "locations",
-  ];
+    // Pastikan developerId dikirim sebagai number
+    "developerId",
+    "minDownPaymentPercent",
+    "maxLoanTermYears",
+  ]);
 
   const filtered: Record<string, any> = {};
-  for (const key of allowedFields) {
-    if (data[key] !== undefined && data[key] !== null) {
-      filtered[key] = data[key];
+  for (const rawKey of Object.keys(data)) {
+    const targetKey = keyMap[rawKey];
+    if (!targetKey) continue;
+
+    let value = data[rawKey];
+    if (numericKeys.has(targetKey)) {
+      // hilangkan karakter non-numerik lalu konversi
+      if (typeof value === "string") {
+        const cleaned = value.replace(/[^0-9.-]/g, "");
+        const num = Number(cleaned);
+        value = isNaN(num) ? value : num;
+      }
+    }
+
+    if (value !== undefined && value !== null && value !== "") {
+      filtered[targetKey] = value;
     }
   }
   return filtered;
@@ -135,10 +210,11 @@ export function filterEditableFields(data: any) {
 // 🔹 Update properti berdasarkan ID
 export async function updateProperty(id: string | number, data: Partial<Property>) {
   try {
-    const filteredData = filterEditableFields(data); // ✅ panggil fungsi di atas
-    console.log("📡 PUT BODY TERKIRIM:", filteredData);
+    const payload = filterEditableFields(data);
+    console.log("📡 PUT BODY TERKIRIM:", payload);
 
-    const res = await coreApi.put(`/admin/properties/${id}`, filteredData);
+    // Endpoint: {{host}}admin/properties/:id
+    const res = await coreApi.put(`/admin/properties/${id}`, payload);
     return res.data;
   } catch (error: any) {
     console.error(`❌ Error updateProperty(${id}):`, error);

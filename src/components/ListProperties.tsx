@@ -102,7 +102,11 @@ export default function PropertiesList() {
     {
       accessorKey: "developer_name",
       header: () => <div className="font-semibold">Developer</div>,
-      cell: ({ row }) => <div>{row.getValue("developer_name")}</div>,
+      cell: ({ row }) => {
+        const original = row.original as any;
+        const name = original.developerName || row.getValue("developer_name");
+        return <div>{name}</div>;
+      },
     },
     {
       accessorKey: "address",
@@ -244,7 +248,18 @@ export default function PropertiesList() {
             open={showDialog}
             onOpenChange={setShowDialog}
             property={selectedProperty}
-            onUpdated={() => fetchData()}
+            onUpdated={(updated?: any) => {
+              if (updated && updated.id) {
+                // Optimistic update: sinkronkan nama developer di list tanpa menunggu GET
+                setData(prev => prev.map(p => (
+                  p.id === updated.id
+                    ? { ...p, developer_name: updated.developerName, developerId: updated.developerId }
+                    : p
+                )));
+              } else {
+                fetchData();
+              }
+            }}
           />
         </React.Suspense>
       )}
