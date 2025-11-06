@@ -27,14 +27,17 @@ export default function Dashboard() {
   // Removed per-second state updates on the whole Dashboard to avoid re-rendering tables/menus
 
 
-  // 🧩 Proteksi: kalau belum login (nggak ada token di cookie) → redirect ke /login
+  // 🧩 Proteksi: redirect hanya bila TIDAK ada token dan TIDAK ada refreshToken
   useEffect(() => {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1]
+    const getCookie = (name: string) =>
+      document.cookie.split("; ")
+        .find((row) => row.startsWith(name + "="))
+        ?.split("=")[1]
 
-    if (!token) {
+    const token = getCookie("token")
+    const refreshToken = getCookie("refreshToken")
+
+    if (!token && !refreshToken) {
       router.push("/login")
     }
   }, [router])

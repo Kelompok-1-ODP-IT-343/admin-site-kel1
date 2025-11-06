@@ -6,16 +6,14 @@ export function middleware(req: NextRequest) {
   const refreshToken = req.cookies.get("refreshToken")?.value;
   const { pathname } = req.nextUrl;
 
-  // Kalau belum login, redirect ke /login
-  if (!token && req.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', req.url))
-  }
-
-    // Jika ada refreshToken tapi token hilang
-  if (!token && refreshToken && pathname.startsWith("/dashboard")) {
-    const refreshUrl = new URL("/api/auth/refresh", req.url);
-    refreshUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(refreshUrl);
+  // Proteksi dashboard: jika token kosong tetapi refreshToken ada, biarkan lanjut
+  // agar client-side interceptor bisa melakukan refresh otomatis.
+  if (!token && pathname.startsWith('/dashboard')) {
+    if (!refreshToken) {
+      return NextResponse.redirect(new URL('/login', req.url))
+    }
+    // ada refreshToken → lanjutkan
+    return NextResponse.next()
   }
 
   // Kalau sudah login tapi buka /login, redirect ke /dashboard

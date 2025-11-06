@@ -27,6 +27,12 @@ const coreApi = axios.create({
   },
 });
 
+// Klien terpisah untuk refresh token agar tidak terpengaruh interceptor
+const refreshClient = axios.create({
+  baseURL: "http://localhost:18080/api/v1",
+  headers: { "Content-Type": "application/json" },
+});
+
 // Interceptor: sisipkan Authorization jika ada token di cookies
 coreApi.interceptors.request.use((config) => {
   try {
@@ -61,10 +67,11 @@ const processQueue = (error: any, token: string | null = null) => {
 coreApi.interceptors.response.use(
   (res) => res,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as any;
 
-    // Kalau expired
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const status = error?.response?.status;
+    // Kalau expired (401/403)
+    if ((status === 401 || status === 403) && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -83,10 +90,14 @@ coreApi.interceptors.response.use(
         const refreshToken = getTokenFromCookie("refreshToken");
         if (!refreshToken) throw new Error("No refresh token");
 
-        const res = await coreApi.post("/auth/refresh-token", { refreshToken });
+        // Gunakan klien tanpa interceptor untuk refresh agar tidak loop
+        const res = await refreshClient.post("/auth/refresh", { refreshToken });
 
-        const newToken = res.data?.data?.token;
-        const newRefresh = res.data?.data?.refreshToken;
+        const payload = res?.data?.data ?? res?.data;
+        const newToken =
+          payload?.token || payload?.accessToken || payload?.access_token || null;
+        const newRefresh =
+          payload?.refreshToken || payload?.refresh_token || null;
 
         if (newToken) {
           setCookie("token", newToken, 900); // 15 menit
