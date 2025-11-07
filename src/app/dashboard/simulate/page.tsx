@@ -4,7 +4,7 @@ import {
   Check, X, Calculator, FileDown, Settings2, Info, XCircle,
   Plus, Trash2, User2, Wallet, BarChart3, FileText, Download, Send, Eye
 } from "lucide-react";
-import React, { JSX, useMemo, useState, useEffect } from "react";
+import React, { JSX, useMemo, useState, useEffect, Suspense } from "react";
 // import {
 //   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 // } from "recharts";
@@ -40,7 +40,7 @@ type RateSegment = {
 };
 
 // ----- Component -----
-export default function ApprovalDetailMockup(): JSX.Element {
+function SimulateContent(): JSX.Element {
   const router = useRouter()
   const searchParams = useSearchParams()
   const id = searchParams.get("id")
@@ -674,6 +674,14 @@ export default function ApprovalDetailMockup(): JSX.Element {
 
       </main>
     </div>
+  );
+}
+
+export default function ApprovalDetailMockup(): JSX.Element {
+  return (
+    <Suspense fallback={<></>}>
+      <SimulateContent />
+    </Suspense>
   );
 }
 

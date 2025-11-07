@@ -29,7 +29,7 @@ import { getUserProfile } from "@/services/akun";
 import { usePathname } from "next/navigation";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import {
   Settings,
@@ -68,7 +68,7 @@ function getAvatarColor(name: string): string {
   return colors[index];
 }
 
-export default function AkunPage() {
+function AkunContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [active, setActive] = useState<Section>("settings");
@@ -236,6 +236,14 @@ export default function AkunPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function AkunPage() {
+  return (
+    <Suspense fallback={<></>}>
+      <AkunContent />
+    </Suspense>
   );
 }
 

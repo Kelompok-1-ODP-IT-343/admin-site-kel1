@@ -169,36 +169,9 @@ export default function ViewPropertyDialog({
                     <strong className="min-w-[110px]">{label}:</strong>
                     {isEditing ? (
                       key === "developer_name" ? (
-                        <Select
-                          value={editedData.developerId ? String(editedData.developerId) : undefined}
-                          onValueChange={async (val) => {
-                            const idNum = Number(val);
-                            try {
-                              const res = await getDeveloperById(idNum);
-                              const data = res?.data || res;
-                              const devName = data?.companyName || data?.company_name || "-";
-                              setEditedData((prev: any) => ({
-                                ...prev,
-                                developerId: Number(data?.id ?? idNum),
-                                developerName: devName,
-                                developer_name: devName,
-                              }));
-                            } catch (e) {
-                              console.error("❌ Gagal mengambil detail developer terpilih:", e);
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-7 text-sm max-w-[180px] sm:max-w-[140px]">
-                            <SelectValue placeholder="Pilih developer" />
-                          </SelectTrigger>
-                          <SelectContent position="popper" align="end">
-                            {developers.map((d) => (
-                              <SelectItem key={d.id} value={String(d.id)}>
-                                {d.company_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <span className="text-right w-[55%] truncate font-medium text-gray-800 dark:text-gray-100">
+                          {editedData.developer_name || "-"}
+                        </span>
                       ) : key === "property_type" ? (
                         <Select
                           value={(editedData as any).property_type ? String((editedData as any).property_type) : undefined}
