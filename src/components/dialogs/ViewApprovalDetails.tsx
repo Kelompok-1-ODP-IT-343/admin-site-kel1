@@ -120,7 +120,7 @@ export default function ViewApprovalDetails({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px] md:max-h-[75vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[640px] md:max-h-[80vh] overflow-y-auto flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-[#1F2937] dark:!text-white">
             Approval Details

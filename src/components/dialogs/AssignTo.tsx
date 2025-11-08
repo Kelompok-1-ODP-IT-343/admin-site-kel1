@@ -4,11 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Info, Send } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { assignAdmins, getPengajuanDetail, getApprovers, Approver } from "@/services/approvekpr";
 import { toast } from "sonner";
 
 export default function AssignApprovalDialog() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [verifikator2, setVerifikator2] = useState("");
   const [verifikator3, setVerifikator3] = useState("");
@@ -73,6 +74,8 @@ export default function AssignApprovalDialog() {
       });
 
       toast.success(res.message || "Assign berhasil ✅");
+      // Redirect ke dashboard setelah toast sukses
+      router.push("/dashboard");
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Gagal assign admin ❌";
       toast.error(String(msg));
