@@ -7,6 +7,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import coreApi from "@/lib/coreApi"
+import { motion, AnimatePresence } from "framer-motion"
+import { useEffect, useState } from "react"
 
 export type HistoryRow = {
   id: string
@@ -35,8 +39,43 @@ export default function ViewApprovalDetails({
   data: HistoryRow | null
 }) {
   if (!data) return null
+  type ApprovalWorkflow = {
+    stage: string
+    assignedToName: string
+    assignedToEmail: string
+    status: "PENDING" | "APPROVED" | "REJECTED" | string
+  }
 
-  const approved = data.status === "approve"
+  const [workflows, setWorkflows] = useState<ApprovalWorkflow[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open || !data?.id) return
+
+    let ignore = false
+    const fetchWorkflow = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await coreApi.get(`/kpr-application/${data.id}`)
+        const payload = res.data?.data ?? res.data
+        const wf: ApprovalWorkflow[] = Array.isArray(payload?.approvalWorkflows)
+          ? payload.approvalWorkflows
+          : []
+        if (!ignore) setWorkflows(wf)
+      } catch (err) {
+        console.error("❌ Error fetching approval workflow:", err)
+        if (!ignore) setError("Gagal memuat workflow approval.")
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    fetchWorkflow()
+    return () => {
+      ignore = true
+    }
+  }, [open, data?.id])
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-"
@@ -48,12 +87,36 @@ export default function ViewApprovalDetails({
     })
   }
 
+  const stageMap: Record<string, string> = {
+    PROPERTY_APPRAISAL: "Property Appraisal",
+    CREDIT_ANALYSIS: "Credit Analysis",
+    FINAL_APPROVAL: "Final Approval",
+  }
+
+  const formatStage = (stage: string) => stageMap[stage] || (stage || "-").replace(/_/g, " ")
+
+  const statusLabel = (s: string) => {
+    const t = (s || "-").toUpperCase()
+    if (t === "PENDING") return "Pending"
+    if (t === "APPROVED") return "Approved"
+    if (t === "REJECTED") return "Rejected"
+    return s
+  }
+
+  const getBadgeStyle = (s: string): React.CSSProperties => {
+    const t = (s || "").toUpperCase()
+    if (t === "PENDING") return { backgroundColor: "#FFF4E5", color: "#C2410C" }
+    if (t === "APPROVED") return { backgroundColor: "#E6F6E6", color: "#15803D" }
+    if (t === "REJECTED") return { backgroundColor: "#FEE2E2", color: "#991B1B" }
+    return { backgroundColor: "#E5E7EB", color: "#1F2937" }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[640px]">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-gray-900 dark:!text-white">
-            Detail Approval
+          <DialogTitle className="text-lg font-semibold text-[#1F2937] dark:!text-white">
+            Approval Details
           </DialogTitle>
         </DialogHeader>
 
@@ -80,22 +143,57 @@ export default function ViewApprovalDetails({
               {data.price > 0 ? `Rp ${data.price.toLocaleString("id-ID")}` : "-"}
             </span>
           </div>
-          <div className="flex justify-between border-b pb-1 items-center">
-            <span className="text-muted-foreground">Status</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                approved
-                  ? "text-green-900 bg-green-200"
-                  : "text-rose-900 bg-rose-200"
-              }`}
-            >
-              {approved ? "Approved" : "Rejected"}
-            </span>
-          </div>
           <div className="flex justify-between border-b pb-1">
             <span className="text-muted-foreground">Tanggal Keputusan</span>
             <span className="font-medium">{formatDate(data.approval_date)}</span>
           </div>
+        </div>
+
+        {/* Timeline Approval */}
+        <div className="mt-5">
+          <div className="text-sm font-semibold text-[#1F2937] mb-2">Approval Workflow</div>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Memuat workflow approval...</div>
+          ) : error ? (
+            <div className="text-sm text-red-700">{error}</div>
+          ) : workflows.length === 0 ? (
+            <div className="text-sm text-muted-foreground">Tidak ada data workflow.</div>
+          ) : (
+            <div className="relative pl-6 border-l-2" style={{ borderLeftColor: "#FF8500" }}>
+              <AnimatePresence>
+                {workflows.map((step, idx) => (
+                  <motion.div
+                    key={`${step.stage}-${idx}`}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.25, delay: idx * 0.05 }}
+                    className="relative mb-4 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm hover:bg-accent/5"
+                  >
+                    <span
+                      className="absolute -left-[9px] top-5 h-3 w-3 rounded-full"
+                      style={{ backgroundColor: "#FF8500" }}
+                    />
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <div className="text-base font-semibold tracking-tight text-[#1F2937]">
+                          {formatStage(step.stage)}
+                        </div>
+                        <div className="text-sm text-gray-700">{step.assignedToName || "-"}</div>
+                        <div className="text-xs text-gray-500">{step.assignedToEmail || "-"}</div>
+                      </div>
+                      <Badge
+                        className="px-2 py-1 text-xs font-semibold"
+                        style={getBadgeStyle(step.status)}
+                      >
+                        {statusLabel(step.status)}
+                      </Badge>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end pt-4">

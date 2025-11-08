@@ -170,17 +170,25 @@ export default function ApprovalHistory() {
           FINAL_APPROVAL: { label: "Final Approval", color: "bg-purple-200 text-purple-900 hover:bg-purple-300" },
           ACCEPTED: { label: "Accepted", color: "bg-green-200 text-green-900 hover:bg-green-300" },
           REJECTED: { label: "Rejected", color: "bg-rose-200 text-rose-900 hover:bg-rose-300" },
+          APPROVAL_PENDING: { label: "Approval Pending", color: "bg-gray-200 text-gray-800 hover:bg-gray-300" },
         }
 
         const current = statusMap[status] || { label: status, color: "bg-gray-200 text-gray-700" }
+        const label = (current.label || "").replace(/_/g, " ")
 
         return (
-          <div
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-md font-semibold shadow-sm ${current.color}`}
+          <Button
+            type="button"
+            size="sm"
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-md font-semibold shadow-sm cursor-pointer ${current.color}`}
+            onClick={() => {
+              setSelectedRow(row.original)
+              setOpenDialog(true)
+            }}
           >
             <span className="h-2.5 w-2.5 rounded-full bg-current" />
-            {current.label}
-          </div>
+            {label}
+          </Button>
         )
       },
     },
