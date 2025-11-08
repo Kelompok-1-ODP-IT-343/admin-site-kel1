@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import coreApi from "@/lib/coreApi"
+import { getPengajuanDetail } from "@/services/approvekpr"
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
 
@@ -58,15 +59,21 @@ export default function ViewApprovalDetails({
       setLoading(true)
       setError(null)
       try {
-        const res = await coreApi.get(`/kpr-application/${data.id}`)
-        const payload = res.data?.data ?? res.data
+        const applicationId = Number(data.id)
+        if (!Number.isFinite(applicationId)) {
+          throw new Error(`Invalid application id: ${data.id}`)
+        }
+
+        // Gunakan service standar yang sudah dipakai di project
+        const payload = await getPengajuanDetail(applicationId)
         const wf: ApprovalWorkflow[] = Array.isArray(payload?.approvalWorkflows)
           ? payload.approvalWorkflows
           : []
         if (!ignore) setWorkflows(wf)
-      } catch (err) {
-        console.error("❌ Error fetching approval workflow:", err)
-        if (!ignore) setError("Gagal memuat workflow approval.")
+      } catch (err: any) {
+        console.error("❌ Error fetching approval workflow:", err?.response?.data || err)
+        const msg = err?.response?.data?.message || err?.message || "Gagal memuat workflow approval."
+        if (!ignore) setError(msg)
       } finally {
         if (!ignore) setLoading(false)
       }
@@ -113,7 +120,7 @@ export default function ViewApprovalDetails({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px]">
+      <DialogContent className="sm:max-w-[640px] md:max-h-[75vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-[#1F2937] dark:!text-white">
             Approval Details
@@ -150,55 +157,58 @@ export default function ViewApprovalDetails({
         </div>
 
         {/* Timeline Approval */}
-        <div className="mt-5">
+        <div className="mt-5 flex-1 min-h-0">
           <div className="text-sm font-semibold text-[#1F2937] mb-2">Approval Workflow</div>
-          {loading ? (
-            <div className="text-sm text-muted-foreground">Memuat workflow approval...</div>
-          ) : error ? (
-            <div className="text-sm text-red-700">{error}</div>
-          ) : workflows.length === 0 ? (
-            <div className="text-sm text-muted-foreground">Tidak ada data workflow.</div>
-          ) : (
-            <div className="relative pl-6 border-l-2" style={{ borderLeftColor: "#FF8500" }}>
-              <AnimatePresence>
-                {workflows.map((step, idx) => (
-                  <motion.div
-                    key={`${step.stage}-${idx}`}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.25, delay: idx * 0.05 }}
-                    className="relative mb-4 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm hover:bg-accent/5"
-                  >
-                    <span
-                      className="absolute -left-[9px] top-5 h-3 w-3 rounded-full"
-                      style={{ backgroundColor: "#FF8500" }}
-                    />
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-0.5">
-                        <div className="text-base font-semibold tracking-tight text-[#1F2937]">
-                          {formatStage(step.stage)}
+
+          {/* Scroll khusus area workflow */}
+          <div className="max-h-[280px] overflow-y-auto rounded-md border bg-white/50 pr-2">
+
+            {loading ? (
+              <div className="text-sm text-muted-foreground">Memuat workflow approval...</div>
+            ) : error ? (
+              <div className="text-sm text-red-700">{error}</div>
+            ) : workflows.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Tidak ada data workflow.</div>
+            ) : (
+              <div className="relative pl-6 border-l-2" style={{ borderLeftColor: "#FF8500" }}>
+                <AnimatePresence>
+                  {workflows.map((step, idx) => (
+                    <motion.div
+                      key={`${step.stage}-${idx}`}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.25, delay: idx * 0.05 }}
+                      className="relative mb-4 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm hover:bg-accent/5"
+                    >
+                      <span
+                        className="absolute -left-[9px] top-5 h-3 w-3 rounded-full"
+                        style={{ backgroundColor: "#FF8500" }}
+                      />
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-0.5">
+                          <div className="text-base font-semibold tracking-tight text-[#1F2937]">
+                            {formatStage(step.stage)}
+                          </div>
+                          <div className="text-sm text-gray-700">{step.assignedToName || "-"}</div>
+                          <div className="text-xs text-gray-500">{step.assignedToEmail || "-"}</div>
                         </div>
-                        <div className="text-sm text-gray-700">{step.assignedToName || "-"}</div>
-                        <div className="text-xs text-gray-500">{step.assignedToEmail || "-"}</div>
+                        <Badge
+                          className="px-2 py-1 text-xs font-semibold"
+                          style={getBadgeStyle(step.status)}
+                        >
+                          {statusLabel(step.status)}
+                        </Badge>
                       </div>
-                      <Badge
-                        className="px-2 py-1 text-xs font-semibold"
-                        style={getBadgeStyle(step.status)}
-                      >
-                        {statusLabel(step.status)}
-                      </Badge>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button onClick={() => onOpenChange(false)}>Tutup</Button>
-        </div>
+
       </DialogContent>
     </Dialog>
   )
