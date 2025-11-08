@@ -66,6 +66,7 @@ export default function CustomerTableDemo() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null)
   const [showDialog, setShowDialog] = React.useState(false)
   const [showPaymentDialog, setShowPaymentDialog] = React.useState(false)
@@ -235,11 +236,13 @@ export default function CustomerTableDemo() {
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    state: { sorting, columnFilters, columnVisibility, rowSelection },
+    onPaginationChange: setPagination,
+    state: { sorting, columnFilters, columnVisibility, rowSelection, pagination },
   })
 
   return (

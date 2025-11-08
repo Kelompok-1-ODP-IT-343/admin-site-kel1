@@ -37,13 +37,13 @@ export default function PropertiesList() {
   const [filter, setFilter] = React.useState("")
   const [selectedProperty, setSelectedProperty] = React.useState<Property | null>(null)
   const [showDialog, setShowDialog] = React.useState(false)
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
   // filter berdasarkan title
   const filteredData = React.useMemo(() => {
-    const data = properties.filter((p) =>
+    return properties.filter((p) =>
       p.title.toLowerCase().includes(filter.toLowerCase())
     )
-    return data.slice(0, 10)
   }, [filter])
 
   const handleDetails = (property: Property) => {
@@ -133,8 +133,10 @@ export default function PropertiesList() {
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: { sorting },
+    onPaginationChange: setPagination,
+    state: { sorting, pagination },
   })
 
   return (

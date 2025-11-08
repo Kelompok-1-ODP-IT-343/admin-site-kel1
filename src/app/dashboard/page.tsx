@@ -57,11 +57,11 @@ export default function Dashboard() {
             <ChartsSection />
           </div>
         )
-      case "Approval KPR":
+      case "Assign KPR":
         return <ApprovalSection />
       // case "Approval Properties":
       //   return <ApprovalProperties />
-      case "Approval History":
+      case "Assign History":
         return <ApprovalHistory />
       case "Customer List":
         return <CustomerInfo />

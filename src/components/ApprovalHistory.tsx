@@ -63,14 +63,23 @@ export default function ApprovalHistory() {
   const [openDialog, setOpenDialog] = React.useState(false)
   const [data, setData] = useState<Pengajuan[]>([])
   const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
   useEffect(() => {
-    async function fetchData() {
-      const result = await getAllNonSubmittedPengajuan()
-      setData(result)
-      setLoading(false)
+    let active = true
+    const fetchData = async () => {
+      try {
+        const result = await getAllNonSubmittedPengajuan()
+        if (active) setData(result || [])
+      } catch (err) {
+        console.error("❌ Gagal memuat data approval history:", err)
+        if (active) setData([])
+      } finally {
+        if (active) setLoading(false)
+      }
     }
     fetchData()
+    return () => { active = false }
   }, [])
 
   // 🔗 Gabungkan data customer dan property
@@ -200,18 +209,11 @@ export default function ApprovalHistory() {
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: { sorting },
+    onPaginationChange: setPagination,
+    state: { sorting, pagination },
   })
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <div className="animate-spin h-8 w-8 border-2 border-t-transparent border-muted-foreground rounded-full mb-3" />
-        <p>Memuat data riwayat approval...</p>
-      </div>
-    )
-  }
 
   return (
     <div className="w-full">
@@ -264,7 +266,16 @@ export default function ApprovalHistory() {
             )}
           </TableBody> */}
           <TableBody>
-            {table.getRowModel().rows.length > 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  Memuat data riwayat approval...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} className="hover:bg-muted/40 transition-colors">
                   {row.getVisibleCells().map((cell) => (
@@ -287,6 +298,26 @@ export default function ApprovalHistory() {
           </TableBody>
 
         </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          Next
+        </Button>
       </div>
 
       {/* --- Dialog Detail --- */}

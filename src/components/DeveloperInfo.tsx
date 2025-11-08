@@ -65,6 +65,7 @@ export default function DeveloperTable() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [showDialog, setShowDialog] = React.useState(false)
   const [selectedDeveloper, setSelectedDeveloper] = React.useState<UiDeveloper | null>(null);
   const [page, setPage] = React.useState(0)
@@ -293,11 +294,13 @@ export default function DeveloperTable() {
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    state: { sorting, columnFilters, columnVisibility, rowSelection },
+    onPaginationChange: setPagination,
+    state: { sorting, columnFilters, columnVisibility, rowSelection, pagination },
   })
 
   if (loading) {
@@ -424,13 +427,33 @@ export default function DeveloperTable() {
         </Table>
 
 
-      </div>
+    </div>
 
-      <ViewDeveloperDialog
-        open={showDialog}
-        onOpenChange={setShowDialog}
-        developer={selectedDeveloper}
-        onUpdated={(upd) => {
+    {/* Pagination */}
+    <div className="flex items-center justify-end space-x-2 py-4">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => table.previousPage()}
+        disabled={!table.getCanPreviousPage()}
+      >
+        Previous
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => table.nextPage()}
+        disabled={!table.getCanNextPage()}
+      >
+        Next
+      </Button>
+    </div>
+
+    <ViewDeveloperDialog
+      open={showDialog}
+      onOpenChange={setShowDialog}
+      developer={selectedDeveloper}
+      onUpdated={(upd) => {
           // replace item di state list
           setDevelopers(prev => prev.map(d => (d.id === upd.id ? upd : d)));
         }}

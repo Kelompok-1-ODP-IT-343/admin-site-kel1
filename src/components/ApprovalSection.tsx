@@ -41,14 +41,23 @@ export default function ApprovalTable() {
   const router = useRouter()
   const [data, setData] = useState<Pengajuan[]>([])
   const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
 
   useEffect(() => {
-    async function fetchData() {
-      const result = await getAllPengajuanByUser()
-      setData(result)
-      setLoading(false)
+    let active = true
+    const fetchData = async () => {
+      try {
+        const result = await getAllPengajuanByUser()
+        if (active) setData(result || [])
+      } catch (err) {
+        console.error("❌ Gagal memuat data pengajuan:", err)
+        if (active) setData([])
+      } finally {
+        if (active) setLoading(false)
+      }
     }
     fetchData()
+    return () => { active = false }
   }, [])
 
   const handleActionClick = (customer: Customer) => {
@@ -121,11 +130,10 @@ export default function ApprovalTable() {
     data, // ⬅️ sekarang ambil dari API, bukan dari file statis
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onPaginationChange: setPagination,
+    state: { pagination },
   })
-
-  if (loading) {
-    return <div className="p-6 text-center text-muted-foreground">Loading data pengajuan...</div>
-  }
 
   return (
     <div className="w-full">
@@ -172,7 +180,16 @@ export default function ApprovalTable() {
           </TableHeader>
 
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={table.getAllColumns().length + 1}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  Loading data pengajuan...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row, index) => (
                 <TableRow
                   key={row.id}
