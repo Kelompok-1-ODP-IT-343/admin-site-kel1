@@ -121,7 +121,6 @@ export default function ApprovalTable() {
     data, // ⬅️ sekarang ambil dari API, bukan dari file statis
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   })
 
   if (loading) {
