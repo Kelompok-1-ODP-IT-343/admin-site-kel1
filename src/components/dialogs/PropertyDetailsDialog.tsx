@@ -31,16 +31,18 @@ export default function ViewPropertyDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({ ...property });
   const [developers, setDevelopers] = useState<Array<{ id: number; company_name: string }>>([]);
+  const [broken, setBroken] = useState<boolean[]>(Array(4).fill(false));
   const gallery: string[] = (() => {
+    const sanitize = (s: string) => s.replace(/^['"`\s]+|['"`\s]+$/g, "");
     const normalize = (v: any): string | null => {
       if (typeof v === "string") {
-        const s = v.trim();
+        const s = sanitize(v.trim());
         return s.length > 0 ? s : null;
       }
       if (v && typeof v === "object") {
         const candidate = v.url || v.src || v.path || v.imageUrl || v.image_url;
         if (typeof candidate === "string") {
-          const s = candidate.trim();
+          const s = sanitize(candidate.trim());
           return s.length > 0 ? s : null;
         }
       }
@@ -167,9 +169,22 @@ export default function ViewPropertyDialog({
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 4 }).map((_, idx) => {
                   const url = gallery[idx];
-                  return url ? (
+                  const showImage = !!url && !broken[idx];
+                  return showImage ? (
                     <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border">
-                      <Image src={url} alt={`${editedData.title} ${idx + 1}`} fill className="object-cover" />
+                      <Image
+                        src={url}
+                        alt={`${editedData.title} ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        onError={() =>
+                          setBroken((prev) => {
+                            const next = [...prev];
+                            next[idx] = true;
+                            return next;
+                          })
+                        }
+                      />
                     </div>
                   ) : (
                     <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border border-dashed grid place-items-center text-muted-foreground">
