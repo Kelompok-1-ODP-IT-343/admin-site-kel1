@@ -19,7 +19,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { Home, Wallet, Ruler, ImageIcon } from "lucide-react"
+import { Home, Wallet, Ruler, ImageIcon, Plus, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function AddProperties() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -38,6 +39,9 @@ export default function AddProperties() {
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1)
+  const [imageSlots, setImageSlots] = useState(
+    Array.from({ length: 4 }, () => ({ file: null as File | null, preview: null as string | null, uploadedUrl: null as string | null, uploading: false }))
+  )
   const handleSubmit = async () => {
     setLoading(true);
 
@@ -94,10 +98,10 @@ export default function AddProperties() {
     setLoading(false);
 
     if (result.success) {
-      alert("✅ Properti berhasil disimpan!");
-      router.push("/dashboard");
+      toast.success("✅ Properti berhasil disimpan!")
+      router.push("/dashboard")
     } else {
-      alert(`❌ Gagal menyimpan properti: ${result.message}`);
+      toast.error(`❌ Gagal menyimpan properti: ${result.message}`)
     }
   };
   const [developers, setDevelopers] = useState<{ id: string; companyName: string }[]>([]);
@@ -151,7 +155,7 @@ export default function AddProperties() {
     const required = requiredFieldsByStep[step] || [];
     for (const field of required) {
       if (!formData[field as keyof typeof formData]) {
-        alert(`❌ Field "${field}" wajib diisi sebelum lanjut.`);
+        toast.warning(`❌ Field "${field}" wajib diisi sebelum lanjut.`)
         return false;
       }
     }
@@ -163,6 +167,27 @@ export default function AddProperties() {
   };
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 1))
+
+  const onSelectImage = async (index: number, file?: File) => {
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus gambar")
+      return
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Ukuran maksimum 20MB per gambar")
+      return
+    }
+    const preview = URL.createObjectURL(file)
+    setImageSlots((prev) => prev.map((s, i) => (i === index ? { ...s, file, preview, uploading: true } : s)))
+    const result = await uploadPropertyImage(file)
+    setImageSlots((prev) => prev.map((s, i) => (i === index ? { ...s, uploading: false, uploadedUrl: result.success ? (result.data as any) : s.uploadedUrl } : s)))
+    if (result.success) {
+      toast.success("✅ Gambar berhasil di-upload!")
+    } else {
+      toast.error(`❌ Upload gagal: ${result.message}`)
+    }
+  }
 
 
 return (
@@ -221,10 +246,10 @@ return (
                     const result = await uploadPropertyImage(selectedFile);
                     setLoading(false);
                     if (result.success) {
-                      alert("✅ Gambar berhasil di-upload!");
-                      console.log("Image URL:", result.data);
+                      toast.success("✅ Gambar berhasil di-upload!")
+                      console.log("Image URL:", result.data)
                     } else {
-                      alert(`❌ Upload gagal: ${result.message}`);
+                      toast.error(`❌ Upload gagal: ${result.message}`)
                     }
                   }}
                 >
@@ -646,35 +671,36 @@ return (
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setSelectedFile(file);
-                    }
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!selectedFile || loading}
-                  onClick={async () => {
-                    if (!selectedFile) return;
-                    setLoading(true);
-                    const result = await uploadPropertyImage(selectedFile);
-                    setLoading(false);
-                    if (result.success) {
-                      alert("✅ Gambar berhasil di-upload!");
-                      console.log("Image URL:", result.data);
-                    } else {
-                      alert(`❌ Upload gagal: ${result.message}`);
-                    }
-                  }}
-                >
-                  {loading ? "Mengunggah..." : "Upload File"}
-                </Button>
+                <div className="grid grid-cols-2 gap-4">
+                  {imageSlots.map((slot, idx) => (
+                    <div
+                      key={idx}
+                      className="relative border border-dashed rounded-xl aspect-square flex items-center justify-center overflow-hidden"
+                    >
+                      {slot.preview ? (
+                        <img src={slot.preview || ""} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-muted-foreground flex flex-col items-center justify-center">
+                          <Plus className="w-8 h-8" />
+                          <span className="text-xs mt-1">Tambah Gambar</span>
+                        </div>
+                      )}
+                      <input
+                        id={`image-slot-${idx}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => onSelectImage(idx, e.target.files?.[0] || undefined)}
+                      />
+                      <label htmlFor={`image-slot-${idx}`} className="absolute inset-0 cursor-pointer" />
+                      {slot.uploading && (
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </EmptyContent>
             </Empty>
           )}

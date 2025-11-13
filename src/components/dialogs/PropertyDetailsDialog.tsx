@@ -5,6 +5,7 @@
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,50 @@ export default function ViewPropertyDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({ ...property });
   const [developers, setDevelopers] = useState<Array<{ id: number; company_name: string }>>([]);
+  const gallery: string[] = (() => {
+    const normalize = (v: any): string | null => {
+      if (typeof v === "string") {
+        const s = v.trim();
+        return s.length > 0 ? s : null;
+      }
+      if (v && typeof v === "object") {
+        const candidate = v.url || v.src || v.path || v.imageUrl || v.image_url;
+        if (typeof candidate === "string") {
+          const s = candidate.trim();
+          return s.length > 0 ? s : null;
+        }
+      }
+      return null;
+    };
+
+    const src: any = editedData as any;
+    const raw = Array.isArray(src.images)
+      ? src.images
+      : Array.isArray(src.imageUrls)
+      ? src.imageUrls
+      : Array.isArray(src.image_urls)
+      ? src.image_urls
+      : null;
+
+    if (raw) {
+      return raw
+        .map(normalize)
+        .filter((u: string | null): u is string => typeof u === "string");
+    }
+
+    const single = src.imageUrl || src.image_url || "";
+    if (typeof single === "string") {
+      if (single.includes(",")) {
+        return single
+          .split(",")
+          .map((s) => normalize(s))
+          .filter((u: string | null): u is string => typeof u === "string");
+      }
+      const s = normalize(single);
+      return s ? [s] : [];
+    }
+    return [];
+  })();
 
   // Fetch developer list for dropdown
   useEffect(() => {
@@ -119,14 +164,19 @@ export default function ViewPropertyDialog({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* ---------- LEFT: IMAGE & SUMMARY ---------- */}
             <div className="space-y-4">
-              {/* Image */}
-              <div className="relative w-full h-56 rounded-lg overflow-hidden border">
-                <Image
-                  src={editedData.imageUrl}
-                  alt={editedData.title}
-                  fill
-                  className="object-cover"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 4 }).map((_, idx) => {
+                  const url = gallery[idx];
+                  return url ? (
+                    <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border">
+                      <Image src={url} alt={`${editedData.title} ${idx + 1}`} fill className="object-cover" />
+                    </div>
+                  ) : (
+                    <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border border-dashed grid place-items-center text-muted-foreground">
+                      <Plus className="w-6 h-6" />
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Title & Description */}

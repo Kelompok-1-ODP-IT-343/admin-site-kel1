@@ -27,10 +27,10 @@ const growthDemand = months.map((m,i)=>({
 const outstandingLoan = months.map((m,i)=>({ name:m, value:[180,260,420,500,610,690,770][i] }));
 
 const funnel = [
-  { name:"Draft", value:280 },
-  { name:"Review", value:190 },
-  { name:"Approval", value:140 },
-  { name:"Reject", value:30 },
+  { name: "Submitted", value: 300 },
+  { name: "Property Appraisal", value: 220 },
+  { name: "Credit Analysis", value: 160 },
+  { name: "Final Approval", value: 95 },
 ];
 
 const repayment = [
@@ -124,39 +124,41 @@ export default function ChartsSection() {
       {/* Register */}
       <ChartCard title="User Registered">
         <section className="rounded-lg border p-4">
-
           <div className="mx-auto aspect-square max-h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart
                 data={[
-                  { month: "January", pegawai: 186, nonPegawai: 160 },
-                  { month: "February", pegawai: 185, nonPegawai: 170 },
-                  { month: "March", pegawai: 207, nonPegawai: 180 },
-                  { month: "April", pegawai: 173, nonPegawai: 160 },
-                  { month: "May", pegawai: 160, nonPegawai: 190 },
-                  { month: "June", pegawai: 174, nonPegawai: 204 },
+                  { month: "Jan", total: 120 },
+                  { month: "Feb", total: 140 },
+                  { month: "Mar", total: 165 },
+                  { month: "Apr", total: 190 },
+                  { month: "Mei", total: 210 },
+                  { month: "Jun", total: 250 },
+                  { month: "Jul", total: 270 },
+                  { month: "Agu", total: 295 },
+                  { month: "Sep", total: 320 },
+                  { month: "Okt", total: 350 },
+                  { month: "Nov", total: 370 },
+                  { month: "Des", total: 400 },
                 ]}
               >
                 <PolarGrid radialLines={false} />
                 <PolarAngleAxis dataKey="month" />
+
                 <Radar
-                  dataKey="pegawai"
-                  stroke="#FF8500"
-                  strokeWidth={3}
-                  fillOpacity={0}
-                />
-                <Radar
-                  dataKey="nonPegawai"
+                  dataKey="total"
                   stroke="#3FD8D4"
                   strokeWidth={3}
                   fillOpacity={0}
                 />
+
                 <Tooltip />
               </RadarChart>
             </ResponsiveContainer>
           </div>
         </section>
       </ChartCard>
+
     </div>
   );
 }
