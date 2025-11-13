@@ -115,7 +115,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.24.0
         with:
           # Jika menggunakan Latest
-          image-ref: docker.io/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}:latest
+          image-ref: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/admin-site-kel1:latest
           # Jika mengggunakan SHA
           # image-ref: ${{ steps.image.outputs.sha_tag }}
           format: 'table'
