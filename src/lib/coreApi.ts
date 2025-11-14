@@ -19,8 +19,8 @@ const setCookie = (name: string, value: string, maxAge: number) => {
 
 // Axios instance untuk seluruh request ke API Satu Atap
 const coreApi = axios.create({
-  // baseURL: "http://local-dev.satuatap.my.id/api/v1",
-  baseURL: "http://localhost:18080/api/v1",
+  baseURL: "https://admin.satuatap.my.id/api/v1",
+  // baseURL: "http://localhost:18080/api/v1",
   timeout: 1500000,
   headers: {
     "Content-Type": "application/json",
@@ -29,7 +29,8 @@ const coreApi = axios.create({
 
 // Klien terpisah untuk refresh token agar tidak terpengaruh interceptor
 const refreshClient = axios.create({
-  baseURL: "http://localhost:18080/api/v1",
+  // baseURL: "http://localhost:18080/api/v1",
+  baseURL: "https://admin.satuatap.my.id/api/v1",
   headers: { "Content-Type": "application/json" },
 });
 
