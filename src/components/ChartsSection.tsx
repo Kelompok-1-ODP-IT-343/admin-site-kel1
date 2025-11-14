@@ -27,10 +27,10 @@ const growthDemand = months.map((m,i)=>({
 const outstandingLoan = months.map((m,i)=>({ name:m, value:[180,260,420,500,610,690,770][i] }));
 
 const funnel = [
-  { name: "Submitted", value: 300 },
-  { name: "Property Appraisal", value: 220 },
-  { name: "Credit Analysis", value: 160 },
-  { name: "Final Approval", value: 95 },
+  { name: "Submitted".replace(/\s+/g, "\n"), value: 300 },
+  { name: "Property Appraisal".replace(/\s+/g, "\n"), value: 220 },
+  { name: "Credit Analysis".replace(/\s+/g, "\n"), value: 160 },
+  { name: "Final Approval".replace(/\s+/g, "\n"), value: 95 },
 ];
 
 const repayment = [
@@ -84,14 +84,18 @@ export default function ChartsSection() {
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={funnel}>
             <CartesianGrid strokeDasharray="3 3" stroke={`${COLORS.gray}33`} />
-            <XAxis dataKey="name" stroke={COLORS.gray} />
+
+            <XAxis
+              dataKey="name"
+              stroke={COLORS.gray}
+              tick={{ fontSize: 11 }}
+              interval={0}   
+            />
 
             {(() => {
-              // ambil nilai max funnel dan tambah 50
               const maxValue = Math.max(...funnel.map((d) => d.value));
               const upperLimit = maxValue + 50;
 
-              // buat ticks otomatis tiap 70 (atau sesuaikan)
               const step = 70;
               const ticks = [];
               for (let i = 0; i <= upperLimit; i += step) ticks.push(i);
@@ -110,7 +114,7 @@ export default function ChartsSection() {
             })()}
 
             <Tooltip />
-            <Bar dataKey="value" radius={[10,10,0,0]}>
+            <Bar dataKey="value" radius={[10, 10, 0, 0]}>
               <Cell fill={COLORS.blue} />
               <Cell fill={COLORS.orange} />
               <Cell fill={COLORS.lime} />
@@ -119,7 +123,6 @@ export default function ChartsSection() {
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
-
 
       {/* Register */}
       <ChartCard title="User Registered">

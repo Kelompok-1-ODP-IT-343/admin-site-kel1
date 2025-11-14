@@ -194,6 +194,13 @@ export default function ViewPropertyDialog({
                 })}
               </div>
 
+
+
+
+            </div>
+
+            {/* ---------- RIGHT: DETAIL & LOCATION ---------- */}
+            <div className="flex flex-col gap-4">
               {/* Title & Description */}
               <div className="space-y-2">
                 {isEditing ? (
@@ -218,7 +225,6 @@ export default function ViewPropertyDialog({
                   </>
                 )}
               </div>
-
               {/* Info Ringkas */}
               <div className="rounded-lg border bg-muted/30 p-4 text-sm grid grid-cols-2 gap-y-2">
                 {[
@@ -269,10 +275,6 @@ export default function ViewPropertyDialog({
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* ---------- RIGHT: DETAIL & LOCATION ---------- */}
-            <div className="flex flex-col gap-4">
               {/* Property Details */}
               <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
                 <h3 className="font-semibold text-base text-gray-900 dark:!text-white">
