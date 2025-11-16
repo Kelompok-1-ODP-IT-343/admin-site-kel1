@@ -1,4 +1,8 @@
 import axios, { AxiosHeaders } from "axios";
+// const BASE_URL = "http://local-dev.satuatap.my.id/api/v1";
+const BASE_URL = "https://satuatap.my.id/api/v1";
+// const BASE_URL = "http://localhost:18080/api/v1";
+
 let isRefreshing = false;
 let failedQueue: any[] = [];
 // Helper function to get token from cookies
@@ -19,24 +23,51 @@ const setCookie = (name: string, value: string, maxAge: number) => {
 
 // Axios instance untuk seluruh request ke API Satu Atap
 const coreApi = axios.create({
-  baseURL: "https://admin.satuatap.my.id/api/v1",
+  // baseURL: "https://admin.satuatap.my.id/api/v1",
   // baseURL: "http://localhost:18080/api/v1",
+  baseURL: BASE_URL,
   timeout: 1500000,
   headers: {
-    "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
 
 // Klien terpisah untuk refresh token agar tidak terpengaruh interceptor
 const refreshClient = axios.create({
   // baseURL: "http://localhost:18080/api/v1",
-  baseURL: "https://admin.satuatap.my.id/api/v1",
-  headers: { "Content-Type": "application/json" },
+  baseURL: BASE_URL,
+  // baseURL: "https://satuatap.my.id/api/v1",
+  headers: { Accept: "application/json" },
 });
 
 // Interceptor: sisipkan Authorization jika ada token di cookies
 coreApi.interceptors.request.use((config) => {
   try {
+    const isForm = (() => {
+      if (!config || !config.data) return false;
+      if (typeof FormData !== "undefined" && config.data instanceof FormData) return true;
+      const tag = Object.prototype.toString.call(config.data);
+      return tag === "[object FormData]" || (typeof (config.data as any)?.append === "function" && (config.data as any)?.[Symbol.toStringTag] === "FormData");
+    })();
+    if (isForm) {
+      if (config.headers instanceof AxiosHeaders) {
+        config.headers.delete("Content-Type");
+      } else {
+        config.headers = new AxiosHeaders(config.headers as any);
+        config.headers.delete("Content-Type");
+      }
+    } else {
+      const method = (config.method || "").toUpperCase();
+      const needsJson = method === "POST" || method === "PUT" || method === "PATCH";
+      if (needsJson) {
+        if (config.headers instanceof AxiosHeaders) {
+          if (!config.headers.get("Content-Type")) config.headers.set("Content-Type", "application/json");
+        } else {
+          config.headers = new AxiosHeaders(config.headers as any);
+          if (!config.headers.get("Content-Type")) config.headers.set("Content-Type", "application/json");
+        }
+      }
+    }
     const token = getTokenFromCookie("token");
     if (token) {
       if (config.headers instanceof AxiosHeaders) {
@@ -125,6 +156,29 @@ coreApi.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+export async function uploadFetch(path: string, formData: FormData, init?: RequestInit) {
+  const token = getTokenFromCookie("token")
+  const headers: Record<string, string> = {}
+  if (token) headers["Authorization"] = `Bearer ${token}`
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    body: formData,
+    headers,
+    ...init,
+  })
+  const text = await res.text()
+  let data: any = null
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    data = null
+  }
+  if (!res.ok) {
+    const message = (data && (data.message || data.error)) || text || `HTTP ${res.status}`
+    throw new Error(message)
+  }
+  return data ?? text
+}
 export default coreApi;
 
 

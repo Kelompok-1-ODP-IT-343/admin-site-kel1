@@ -39,70 +39,41 @@ export default function AddProperties() {
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1)
+  const [propertyId, setPropertyId] = useState<number | null>(null)
   const [imageSlots, setImageSlots] = useState(
     Array.from({ length: 4 }, () => ({ file: null as File | null, preview: null as string | null, uploadedUrl: null as string | null, uploading: false }))
   )
   const handleSubmit = async () => {
-    setLoading(true);
-
-    // 🚀 bikin payload sesuai backend DTO
-    const payload = {
-      propertyCode: `PROP-${new Date().getFullYear()}-${Math.floor(Math.random() * 9000 + 1000)}`,
-      // developerId: Number(formData.developer) || 1, // ganti sesuai id developer beneran
-      developerId: Number(formData.developer),
-      propertyType: formData.tipe?.toUpperCase() || "RUMAH",
-      listingType: "PRIMARY",
-      title: formData.title,
-      description: formData.biayaTambahan || "Properti baru yang siap huni.",
-      address: formData.alamat,
-      city: formData.kota,
-      province: formData.provinsi,
-      postalCode: formData.kodePos || "00000",
-      district: formData.kecamatan,
-      village: formData.kelurahan,
-      latitude: parseFloat(formData.latitude) || -6.244,
-      longitude: parseFloat(formData.longitude) || 106.829,
-      landArea: parseFloat(formData.luasTanah) || 0,
-      buildingArea: parseFloat(formData.luasBangunan) || 0,
-      bedrooms: parseInt(formData.kamarTidur) || 0,
-      bathrooms: parseInt(formData.kamarMandi) || 0,
-      floors: parseInt(formData.lantai) || 1,
-      garage: parseInt(formData.garasi) || 1,
-      yearBuilt: parseInt(formData.tahunBangun) || 2024,
-      price: parseFloat(formData.hargaTotal) || 0,
-      pricePerSqm: parseFloat(formData.hargaTanah) || 1000,
-      maintenanceFee: parseFloat(formData.biayaPemeliharaan) || 0,
-      certificateType: formData.sertifikat || "SHM",
-      certificateNumber: `SHM-${new Date().getFullYear()}-${Math.floor(Math.random() * 9999)}`,
-      certificateArea: parseFloat(formData.luasTanah) || 0,
-      pbbValue: parseFloat(formData.pbb) || 0,
-      status: "AVAILABLE",
-      availabilityDate: "2025-10-01",
-      handoverDate: "2026-01-15",
-      isFeatured: false,
-      isKprEligible: true,
-      minDownPaymentPercent: parseFloat(formData.dp) || 20.0,
-      maxLoanTermYears: 20,
-      slug: formData.title.toLowerCase().replace(/\s+/g, "-"),
-      metaTitle: `${formData.title} | ${formData.kota}`,
-      metaDescription:
-        formData.biayaTambahan ||
-        `Properti di ${formData.kota} dengan harga ${formData.hargaTotal}`,
-      keywords: "rumah, properti, BNI griya, satu atap",
-      viewCount: 0,
-      inquiryCount: 0,
-      favoriteCount: 0,
-    };
-
-    const result = await createProperty(payload);
-    setLoading(false);
-
-    if (result.success) {
-      toast.success("✅ Properti berhasil disimpan!")
-      router.push("/dashboard")
-    } else {
-      toast.error(`❌ Gagal menyimpan properti: ${result.message}`)
+    if (!propertyId) {
+      toast.error("❌ Properti belum dibuat. Selesaikan Step 3 dulu.")
+      return
     }
+    const pending = imageSlots
+      .map((s, i) => ({...s, index: i}))
+      .filter((s) => s.file && !s.uploadedUrl) as { file: File; preview: string | null; uploadedUrl: string | null; uploading: boolean; index: number }[]
+    if (pending.length > 0) {
+      setImageSlots((prev) => prev.map((s, i) => {
+        const p = pending.find((x) => x.index === i)
+        return p ? { ...s, uploading: true } : s
+      }))
+      const results = await Promise.all(pending.map(async (p) => uploadPropertyImage(p.file, propertyId)))
+      let anyFail = false
+      setImageSlots((prev) => prev.map((s, i) => {
+        const idx = pending.findIndex((x) => x.index === i)
+        if (idx >= 0) {
+          const r = results[idx]
+          if (!r.success) anyFail = true
+          return { ...s, uploading: false, uploadedUrl: r.success ? (r.data as any) : s.uploadedUrl }
+        }
+        return s
+      }))
+      if (anyFail) {
+        toast.error("❌ Sebagian gambar gagal di-upload")
+        return
+      }
+    }
+    toast.success("✅ Properti dan gambar tersimpan!")
+    router.push("/dashboard")
   };
   const [developers, setDevelopers] = useState<{ id: string; companyName: string }[]>([]);
 
@@ -146,7 +117,7 @@ export default function AddProperties() {
 
   const requiredFieldsByStep: Record<number, string[]> = {
     1: ["title", "developer", "tipe", "alamat", "kota", "provinsi", "kecamatan", "kelurahan", "kodePos"],
-    2: ["hargaTotal", "sertifikat"],
+    2: ["hargaTotal", "hargaTanah", "sertifikat"],
     3: ["luasTanah", "luasBangunan", "kamarTidur", "kamarMandi", "lantai", "garasi", "tahunBangun"],
   };
 
@@ -162,8 +133,74 @@ export default function AddProperties() {
     return true;
   };
 
-  const nextStep = () => {
-    if (validateStep()) setStep((s) => Math.min(s + 1, 4));
+  const nextStep = async () => {
+    if (!validateStep()) return;
+    if (step === 3) {
+      setLoading(true);
+      const payload = {
+        propertyCode: `PROP-${new Date().getFullYear()}-${Math.floor(Math.random() * 9000 + 1000)}`,
+        developerId: Number(formData.developer),
+        propertyType: formData.tipe?.toUpperCase() || "RUMAH",
+        listingType: "PRIMARY",
+        title: formData.title,
+        description: formData.biayaTambahan || "Properti baru yang siap huni.",
+        address: formData.alamat,
+        city: formData.kota,
+        province: formData.provinsi,
+        postalCode: formData.kodePos || "00000",
+        district: formData.kecamatan,
+        village: formData.kelurahan,
+        latitude: parseFloat(formData.latitude) || -6.244,
+        longitude: parseFloat(formData.longitude) || 106.829,
+        landArea: parseFloat(formData.luasTanah) || 0,
+        buildingArea: parseFloat(formData.luasBangunan) || 0,
+        bedrooms: parseInt(formData.kamarTidur) || 0,
+        bathrooms: parseInt(formData.kamarMandi) || 0,
+        floors: parseInt(formData.lantai) || 1,
+        garage: parseInt(formData.garasi) || 1,
+        yearBuilt: parseInt(formData.tahunBangun) || 2024,
+        price: parseFloat(formData.hargaTotal) || 0,
+        pricePerSqm: parseFloat(formData.hargaTanah) || 0,
+        maintenanceFee: parseFloat(formData.biayaPemeliharaan) || 0,
+        certificateType: formData.sertifikat || "SHM",
+        certificateNumber: `SHM-${new Date().getFullYear()}-${Math.floor(Math.random() * 9999)}`,
+        certificateArea: parseFloat(formData.luasTanah) || 0,
+        pbbValue: parseFloat(formData.pbb) || 0,
+        status: "AVAILABLE",
+        availabilityDate: "2025-10-01",
+        handoverDate: "2026-01-15",
+        isFeatured: false,
+        isKprEligible: true,
+        minDownPaymentPercent: parseFloat(formData.dp) || 20.0,
+        maxLoanTermYears: 20,
+        slug: formData.title.toLowerCase().replace(/\s+/g, "-"),
+        metaTitle: `${formData.title} | ${formData.kota}`,
+        metaDescription:
+          formData.biayaTambahan ||
+          `Properti di ${formData.kota} dengan harga ${formData.hargaTotal}`,
+        keywords: "rumah, properti, BNI griya, satu atap",
+        viewCount: 0,
+        inquiryCount: 0,
+        favoriteCount: 0,
+      };
+      const result = await createProperty(payload);
+      setLoading(false);
+      if (result.success) {
+        const created = result.data
+        const id = created?.id ?? created?.data?.id
+        if (id) {
+          setPropertyId(Number(id))
+          toast.success("✅ Properti berhasil dibuat. Lanjut upload gambar.")
+          setStep(4)
+        } else {
+          toast.error("❌ ID properti tidak ditemukan dari response.")
+        }
+      } else {
+        toast.error(`❌ Gagal menyimpan properti: ${result.message}`)
+      }
+    } else {
+      setStep((s) => Math.min(s + 1, 4));
+    }
   };
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 1))
@@ -180,7 +217,12 @@ export default function AddProperties() {
     }
     const preview = URL.createObjectURL(file)
     setImageSlots((prev) => prev.map((s, i) => (i === index ? { ...s, file, preview, uploading: true } : s)))
-    const result = await uploadPropertyImage(file)
+    if (!propertyId) {
+      toast.error("❌ Properti belum dibuat. Selesaikan Step 3 dulu.")
+      setImageSlots((prev) => prev.map((s, i) => (i === index ? { ...s, uploading: false } : s)))
+      return
+    }
+    const result = await uploadPropertyImage(file, propertyId)
     setImageSlots((prev) => prev.map((s, i) => (i === index ? { ...s, uploading: false, uploadedUrl: result.success ? (result.data as any) : s.uploadedUrl } : s)))
     if (result.success) {
       toast.success("✅ Gambar berhasil di-upload!")
@@ -454,6 +496,27 @@ return (
                     }
                   }}
                   placeholder="850000000"
+                />
+              </div>
+
+              <div>
+                <Label className="mb-1.5 block">Harga Tanah/m²</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  name="hargaTanah"
+                  value={formData.hargaTanah}
+                  onChange={(e) => {
+                    const onlyNumbers = e.target.value.replace(/\D/g, "");
+                    setFormData({ ...formData, hargaTanah: onlyNumbers });
+                  }}
+                  onKeyDown={(e) => {
+                    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="Contoh: 1500000"
                 />
               </div>
 

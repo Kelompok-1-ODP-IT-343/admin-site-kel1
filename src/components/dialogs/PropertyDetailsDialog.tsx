@@ -5,11 +5,11 @@
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Trash, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Property, updateProperty, filterEditableFields } from "@/services/properties";
+import { Property, updateProperty, filterEditableFields, getPropertyDetail, deletePropertyImageLinks, uploadPropertyImage } from "@/services/properties";
 import { fetchDevelopers, getDeveloperById } from "@/services/developers";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
@@ -31,7 +31,12 @@ export default function ViewPropertyDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({ ...property });
   const [developers, setDevelopers] = useState<Array<{ id: number; company_name: string }>>([]);
-  const [broken, setBroken] = useState<boolean[]>(Array(4).fill(false));
+  const [broken, setBroken] = useState<boolean[]>([]);
+  const [deleting, setDeleting] = useState<Record<number, boolean>>({});
+  const [uploading, setUploading] = useState<Record<number, boolean>>({});
+  const [confirmImageOpen, setConfirmImageOpen] = useState(false);
+  const [deleteImageTarget, setDeleteImageTarget] = useState<{ url: string; idx: number } | null>(null);
+  const [localImages, setLocalImages] = useState<Record<number, { file: File; preview: string }>>({});
   const gallery: string[] = (() => {
     const sanitize = (s: string) => s.replace(/^['"`\s]+|['"`\s]+$/g, "");
     const normalize = (v: any): string | null => {
@@ -78,6 +83,10 @@ export default function ViewPropertyDialog({
     return [];
   })();
 
+  useEffect(() => {
+    setBroken(Array(Math.max(gallery.length, 4)).fill(false));
+  }, [gallery.length]);
+
   // Fetch developer list for dropdown
   useEffect(() => {
     (async () => {
@@ -99,6 +108,13 @@ export default function ViewPropertyDialog({
   useEffect(() => {
     (async () => {
       try {
+        // Ambil detail properti penuh agar field seperti images terisi
+        const detailId = property?.id
+        if (detailId) {
+          const detail = await getPropertyDetail(detailId)
+          const full = detail?.data || property
+          if (full) setEditedData(full as any)
+        }
         const devId = (editedData as any).developerId || (editedData as any).developer_id;
         if (devId) {
           const res = await getDeveloperById(devId);
@@ -117,6 +133,24 @@ export default function ViewPropertyDialog({
     })();
     // jalankan ulang bila property berubah
   }, [property?.id]);
+
+  useEffect(() => {
+    (async () => {
+      if (!open || !property?.id) return
+      const detail = await getPropertyDetail(property.id)
+      const full: any = detail?.data || property
+      if (full) {
+        setEditedData((prev: any) => ({
+          ...prev,
+          ...full,
+          developerId: Number(full?.developer?.id ?? full?.developer_id ?? prev?.developerId),
+          developerName: full?.developer?.companyName ?? full?.developer_name ?? prev?.developerName,
+          developer_name: full?.developer?.companyName ?? full?.developer_name ?? prev?.developer_name,
+          property_type: full?.property_type ?? full?.propertyType ?? prev?.property_type,
+        }))
+      }
+    })()
+  }, [open, property?.id])
 
   const handleChange = (field: string, value: string | number) => {
     setEditedData((prev) => ({ ...prev, [field]: value }));
@@ -153,6 +187,7 @@ export default function ViewPropertyDialog({
 
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[1500] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -167,7 +202,7 @@ export default function ViewPropertyDialog({
             {/* ---------- LEFT: IMAGE & SUMMARY ---------- */}
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                {Array.from({ length: 4 }).map((_, idx) => {
+                {Array.from({ length: Math.max(gallery.length, 4) }).map((_, idx) => {
                   const url = gallery[idx];
                   const showImage = !!url && !broken[idx];
                   return showImage ? (
@@ -177,6 +212,7 @@ export default function ViewPropertyDialog({
                         alt={`${editedData.title} ${idx + 1}`}
                         fill
                         className="object-cover"
+                        unoptimized
                         onError={() =>
                           setBroken((prev) => {
                             const next = [...prev];
@@ -185,10 +221,125 @@ export default function ViewPropertyDialog({
                           })
                         }
                       />
+                      {isEditing && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="absolute top-2 right-2 h-7 px-2"
+                          disabled={!!deleting[idx]}
+                          onClick={() => {
+                            setDeleteImageTarget({ url, idx })
+                            setConfirmImageOpen(true)
+                          }}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   ) : (
-                    <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border border-dashed grid place-items-center text-muted-foreground">
-                      <Plus className="w-6 h-6" />
+                    <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border border-dashed text-muted-foreground">
+                      {isEditing ? (
+                        localImages[idx] ? (
+                          <>
+                            <img src={localImages[idx].preview} alt="Preview" className="w-full h-full object-cover" />
+                            {uploading[idx] && (
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                <Loader2 className="w-5 h-5 animate-spin text-white" />
+                              </div>
+                            )}
+                            <div className="absolute bottom-2 right-2 flex gap-2">
+                              <Button
+                                size="sm"
+                                className="h-7 px-2"
+                                disabled={!!uploading[idx]}
+                                onClick={async () => {
+                                  const item = localImages[idx]
+                                  if (!item) return
+                                  try {
+                                    setUploading((prev) => ({ ...prev, [idx]: true }))
+                                    const pid = (editedData as any).id
+                                    const res = await uploadPropertyImage(item.file, pid)
+                                    if (res?.success) {
+                                      let link: string | null = null
+                                      const d: any = res.data
+                                      if (Array.isArray(d)) link = typeof d[0] === "string" ? d[0] : null
+                                      else if (typeof d === "string") link = d
+                                      else if (Array.isArray(d?.data)) link = typeof d.data[0] === "string" ? d.data[0] : null
+                                      else if (typeof d?.data === "string") link = d.data
+                                      setEditedData((prev: any) => {
+                                        const next: any = { ...prev }
+                                        const key = Array.isArray(next.images)
+                                          ? "images"
+                                          : Array.isArray(next.imageUrls)
+                                          ? "imageUrls"
+                                          : Array.isArray(next.image_urls)
+                                          ? "image_urls"
+                                          : "images"
+                                        if (!Array.isArray(next[key])) next[key] = []
+                                        if (link) next[key] = [...next[key], link]
+                                        return next
+                                      })
+                                      setLocalImages((prev) => {
+                                        const next = { ...prev }
+                                        delete next[idx]
+                                        return next
+                                      })
+                                      toast.success("✅ Gambar berhasil di-upload!")
+                                    } else {
+                                      toast.error(res?.message || "❌ Upload gagal")
+                                    }
+                                  } catch (err: any) {
+                                    toast.error(err?.message || "Terjadi kesalahan saat upload")
+                                  } finally {
+                                    setUploading((prev) => ({ ...prev, [idx]: false }))
+                                  }
+                                }}
+                              >
+                                Upload
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-7 px-2"
+                                disabled={!!uploading[idx]}
+                                onClick={() => {
+                                  setLocalImages((prev) => {
+                                    const next = { ...prev }
+                                    delete next[idx]
+                                    return next
+                                  })
+                                }}
+                              >
+                                <Trash className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <input
+                              id={`dialog-image-slot-${idx}`}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (!file) return
+                                if (!file.type.startsWith("image/")) { toast.error("File harus gambar"); e.currentTarget.value = ""; return }
+                                if (file.size > 20 * 1024 * 1024) { toast.error("Ukuran maksimum 20MB per gambar"); e.currentTarget.value = ""; return }
+                                const preview = URL.createObjectURL(file)
+                                setLocalImages((prev) => ({ ...prev, [idx]: { file, preview } }))
+                              }}
+                            />
+                            <label htmlFor={`dialog-image-slot-${idx}`} className="absolute inset-0 cursor-pointer grid place-items-center">
+                              <Plus className="w-10 h-10" />
+                            </label>
+                          </>
+                        )
+                      ) : (
+                        <div className="absolute inset-0 grid place-items-center">
+                          <Plus className="w-10 h-10" />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -245,7 +396,10 @@ export default function ViewPropertyDialog({
                         </span>
                       ) : key === "property_type" ? (
                         <Select
-                          value={(editedData as any).property_type ? String((editedData as any).property_type) : undefined}
+                          value={(function(){
+                            const raw = (editedData as any).property_type ?? (editedData as any).propertyType
+                            return raw ? String(raw).toLowerCase() : undefined
+                          })()}
                           onValueChange={(val) => handleChange("property_type", val)}
                         >
                           <SelectTrigger className="h-7 text-sm max-w-[180px] sm:max-w-[140px]">
@@ -266,11 +420,21 @@ export default function ViewPropertyDialog({
                         />
                       )
                     ) : (
-                      <span className="text-right w-[55%] truncate">
-                        {key.includes("price")
-                          ? `Rp${(editedData as any)[key].toLocaleString("id-ID")}`
-                          : (editedData as any)[key]}
-                      </span>
+                      (() => {
+                        if (key === "developer_name") {
+                          const name = (editedData as any).developer_name
+                            || (editedData as any).developerName
+                            || (editedData as any)?.developer?.companyName
+                            || "-"
+                          return <span className="text-right w-[55%] truncate font-medium">{name}</span>
+                        }
+                        const raw = (editedData as any)[key]
+                        const isPrice = key.includes("price")
+                        const formatted = isPrice
+                          ? `Rp${Number(raw ?? 0).toLocaleString("id-ID")}`
+                          : raw ?? "-"
+                        return <span className="text-right w-[55%] truncate">{formatted}</span>
+                      })()
                     )}
                   </div>
                 ))}
@@ -383,17 +547,21 @@ export default function ViewPropertyDialog({
                   ].map(([label, key]) => (
                     <div key={key} className="flex justify-between items-center gap-3">
                       <strong className="min-w-[120px]">{label}:</strong>
-                      {isEditing ? (
-                        <Input
-                          value={(editedData as any)[key]}
-                          onChange={(e) => handleChange(key, e.target.value)}
-                          className="h-7 text-sm max-w-[180px] sm:max-w-[140px]"
-                        />
-                      ) : (
-                        <span className="text-right truncate max-w-[180px]">
-                          {(editedData as any)[key]}
-                        </span>
-                      )}
+                      {(() => {
+                        const val =
+                          key === "sub_district"
+                            ? (editedData as any).sub_district ?? (editedData as any).village
+                            : (editedData as any)[key]
+                        return isEditing ? (
+                          <Input
+                            value={val ?? ""}
+                            onChange={(e) => handleChange(key, e.target.value)}
+                            className="h-7 text-sm max-w-[180px] sm:max-w-[140px]"
+                          />
+                        ) : (
+                          <span className="text-right truncate max-w-[180px]">{val ?? "-"}</span>
+                        )
+                      })()}
                     </div>
                   ))}
                 </div>
@@ -426,5 +594,61 @@ export default function ViewPropertyDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <Dialog open={confirmImageOpen} onOpenChange={setConfirmImageOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Hapus Gambar</DialogTitle>
+          <DialogDescription>Gambar akan dihapus dari properti ini.</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setConfirmImageOpen(false)
+              setDeleteImageTarget(null)
+            }}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              if (!deleteImageTarget) return
+              const { url, idx } = deleteImageTarget
+              try {
+                setDeleting((prev) => ({ ...prev, [idx]: true }))
+                const pid = (editedData as any).id
+                const res = await deletePropertyImageLinks([url], pid)
+                if (res?.success) {
+                  setEditedData((prev: any) => {
+                    const next: any = { ...prev }
+                    if (Array.isArray(next.images)) next.images = next.images.filter((u: any) => String(u) !== url)
+                    else if (Array.isArray(next.imageUrls)) next.imageUrls = next.imageUrls.filter((u: any) => String(u) !== url)
+                    else if (Array.isArray(next.image_urls)) next.image_urls = next.image_urls.filter((u: any) => String(u) !== url)
+                    else if (typeof next.imageUrl === "string") {
+                      const arr = next.imageUrl.split(",").map((s: string) => s.trim()).filter(Boolean)
+                      next.imageUrl = arr.filter((u: string) => u !== url).join(",")
+                    }
+                    return next
+                  })
+                  toast.success("Gambar dihapus")
+                } else {
+                  toast.error(res?.message || "Gagal menghapus gambar")
+                }
+              } catch (e: any) {
+                toast.error(e?.message || "Terjadi kesalahan")
+              } finally {
+                setDeleting((prev) => ({ ...prev, [idx]: false }))
+                setConfirmImageOpen(false)
+                setDeleteImageTarget(null)
+              }
+            }}
+          >
+            Hapus
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

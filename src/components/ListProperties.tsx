@@ -57,11 +57,19 @@ export default function PropertiesList() {
   const [showDialog, setShowDialog] = React.useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false)
   const [deleteTarget, setDeleteTarget] = React.useState<Property | null>(null)
+  const [serialById, setSerialById] = React.useState<Record<number, number>>({})
   const fetchData = async () => {
     try {
       setLoading(true)
       const result = await getAdminProperties()
-      if (result.success) setData(result.data)
+      if (result.success) {
+        const items = result.data as Property[]
+        setData(items)
+        const sorted = [...items].sort((a, b) => Number(a.id) - Number(b.id))
+        const map: Record<number, number> = {}
+        sorted.forEach((p, idx) => { map[Number(p.id)] = idx + 1 })
+        setSerialById(map)
+      }
     } finally {
       setLoading(false)
     }
@@ -71,7 +79,12 @@ export default function PropertiesList() {
     const fetchData = async () => {
       const result = await getAdminProperties()
       if (result.success) {
-        setData(result.data)
+        const items = result.data as Property[]
+        setData(items)
+        const sorted = [...items].sort((a, b) => Number(a.id) - Number(b.id))
+        const map: Record<number, number> = {}
+        sorted.forEach((p, idx) => { map[Number(p.id)] = idx + 1 })
+        setSerialById(map)
       }
       setLoading(false)
     }
@@ -102,9 +115,11 @@ export default function PropertiesList() {
     {
       id: "no",
       header: () => <div className="font-semibold text-center w-10">No</div>,
-      cell: ({ row }) => (
-        <div className="text-center w-10">{row.index + 1}</div>
-      ),
+      cell: ({ row }) => {
+        const id = Number(row.original.id)
+        const no = serialById[id] ?? row.index + 1
+        return <div className="text-center w-10">{no}</div>
+      },
     },
     {
       accessorKey: "title",
@@ -188,6 +203,7 @@ export default function PropertiesList() {
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     state: { sorting },
   })
 
@@ -330,7 +346,14 @@ export default function PropertiesList() {
                     loading: "Menghapus properti...",
                     success: (res) => {
                       if (res?.success) {
-                        setData((prev) => prev.filter((p) => p.id !== target.id))
+                        setData((prev) => {
+                          const next = prev.filter((p) => p.id !== target.id)
+                          const sorted = [...next].sort((a, b) => Number(a.id) - Number(b.id))
+                          const map: Record<number, number> = {}
+                          sorted.forEach((p, idx) => { map[Number(p.id)] = idx + 1 })
+                          setSerialById(map)
+                          return next
+                        })
                         return `${target.title} berhasil dihapus`
                       }
                       throw new Error(res?.message || "Gagal menghapus properti")

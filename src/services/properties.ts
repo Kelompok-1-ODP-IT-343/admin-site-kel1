@@ -1,5 +1,5 @@
 // src/services/properties.ts
-import coreApi from "@/lib/coreApi"
+import coreApi, { uploadFetch } from "@/lib/coreApi"
 
 export type Property = {
   id: number;
@@ -48,19 +48,30 @@ export type Property = {
 
 
 // 🔹 Upload gambar properti (form-data)
-export async function uploadPropertyImage(file: File) {
+export async function uploadPropertyImage(file: File, propertyId: number | string) {
   try {
-    const formData = new FormData()
-    formData.append("image", file) // pastikan key sesuai backend
+    const fd = new FormData()
+    fd.append("images", file)
+    fd.append("propertyId", String(propertyId))
+    const data = await uploadFetch("/admin/image", fd)
+    return { success: true, data }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    return { success: false, message }
+  }
+}
 
-    const res = await coreApi.post("/admin/image", formData, {
-    })
-
-    console.log("📸 Upload sukses:", res.data)
-    return { success: true, data: res.data }
-  } catch (error: any) {
-    console.error("❌ Error uploadPropertyImage:", error)
-    return { success: false, message: error.message }
+export async function uploadPropertyImages(files: File[], propertyId: number | string) {
+  try {
+    const fd = new FormData()
+    files.forEach((f) => fd.append("images", f))
+    fd.append("propertyId", String(propertyId))
+    const data = await uploadFetch("/admin/image", fd)
+    return { success: true, data }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    console.error("❌ Error uploadPropertyImages:", error)
+    return { success: false, message }
   }
 }
 
@@ -91,6 +102,32 @@ export async function getAdminProperties() {
   } catch (error) {
     console.error("❌ Error fetching properties:", error)
     return { success: false, message: "Terjadi kesalahan saat mengambil data" }
+  }
+}
+
+export async function getPropertyDetail(id: string | number) {
+  try {
+    const res = await coreApi.get(`/properties/${id}/details`)
+    const json = res.data
+    if (json?.success) return { success: true, data: json.data }
+    return { success: false, message: json?.message || "Gagal mengambil detail properti" }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    console.error(`❌ Error getPropertyDetail(${id}):`, error)
+    return { success: false, message }
+  }
+}
+
+export async function deletePropertyImageLinks(links: string[], propertyId: number | string) {
+  try {
+    const res = await coreApi.post("/admin/image/delete", { links, propertyId })
+    const json = res.data
+    if (json?.success) return { success: true, data: json.data }
+    return { success: false, message: json?.message || "Gagal menghapus gambar" }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    console.error("❌ Error deletePropertyImageLinks:", error)
+    return { success: false, message }
   }
 }
 // ✅ Utility untuk memetakan field UI (snake_case) ke payload API (camelCase)
