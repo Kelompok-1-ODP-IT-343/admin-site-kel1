@@ -1,75 +1,42 @@
 name: dockerhub
+
 on:
   push:
     branches: ["main"]
     tags: ["v*", "release-*"]
   workflow_dispatch:
+
 env:
   IMAGE_NAME: admin-site-kel1
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
     steps:
-      # [1] Checkout repository
-      # - name: Checkout repository
-      #   uses: actions/checkout@v4
-
-      # [2] Setup Node.js (for lint/test)
-      # - name: Setup Node
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: "20"
-      #     cache: "npm"
-
-      # [3] Install dependencies
-      # - name: Install dependencies
-      #   run: npm ci
-
-      # [4] Lint & Test
-      # - name: Run Linter
-      #   run: npm run lint
-      # - name: Run Unit Tests
-      #   run: npm test -- --coverage
-
-      # [5] SonarCloud Scan (Code Quality)
-      # - name: SonarCloud Scan
-      #   uses: SonarSource/sonarcloud-github-action@v2
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   with:
-      #     args: >
-      #       -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-      #       -Dsonar.organization=${{ secrets.SONAR_ORG }}
-      #       -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-
-      # [6] Trivy Filesystem Scan
-      # - name: Trivy FS Scan
-      #   uses: aquasecurity/trivy-action@0.28.0
-      #   with:
-      #     scan-type: 'fs'
-      #     scanners: 'vuln,secret,misconfig'
-      #     ignore-unfixed: true
-      #     severity: 'HIGH,CRITICAL'
-      #     exit-code: '1'
-      #     skip-dirs: 'node_modules,.git'
-
-      # [7] Setup Docker Build Environment
-      # - name: Setup QEMU
-      #   uses: docker/setup-qemu-action@v3
-      # - name: Setup Buildx
-      #   uses: docker/setup-buildx-action@v3
-
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build --if-present
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: docker/setup-buildx-action@v3
 
-      # [8] Login to Docker Hub
-      # - name: Login to Docker Hub
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
-      # [9] Extract Metadata for Docker Tags
       - name: Extract metadata for tags
         id: meta
         uses: docker/metadata-action@v5
@@ -80,17 +47,6 @@ jobs:
             type=sha,format=long
             type=ref,event=tag
       
-      # [10] Trivy Image Scan (Optional)
-      # - name: Trivy Image Scan (pre-push)
-      #   uses: aquasecurity/trivy-action@0.28.0
-      #   with:
-      #     image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-      #     format: 'table'
-      #     ignore-unfixed: true
-      #     severity: 'HIGH,CRITICAL'
-      #     exit-code: '1'
-
-      # [11] Build and Push Image
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -109,34 +65,35 @@ jobs:
           echo "sha_tag=$TAG" >> $GITHUB_OUTPUT
           echo "Using tag: $TAG"
 
-      # --- TRIVY SCAN (SIMPLE & CLEAR) ---
-      - name: Trivy Scan
+
+      - name: Trivy Scan (JSON)
         id: trivy
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          # Jika menggunakan Latest
-          image-ref: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/admin-site-kel1:latest
-          # Jika mengggunakan SHA
-          # image-ref: ${{ steps.image.outputs.sha_tag }}
-          format: 'table'
-          vuln-type: 'os,library'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '0'
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/admin-site-kel1:${{ steps.image.outputs.sha_tag }}
+          format: json
+          vuln-type: os,library
+          severity: CRITICAL
+          exit-code: 0
           ignore-unfixed: false
-          output: trivy-report.txt
+          output: trivy-report.json
 
-      # --- GITHUB SUMMARY (CLEAR) ---
+
       - name: Upload Trivy Summary
         run: |
-          echo "## 🔍 Trivy Vulnerability Scan Report" >> $GITHUB_STEP_SUMMARY
+          echo "## Trivy Vulnerability Scan Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/admin-site-kel1:${{ steps.image.outputs.sha_tag }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          echo "**Image scanned:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`${{ steps.image.outputs.sha_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          CRIT=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' trivy-report.json)
+          echo "- Critical: $CRIT" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          echo "### 📄 Full Trivy Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat trivy-report.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Installed | Fixed | CVE | Link |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------|-------|-----|------|" >> $GITHUB_STEP_SUMMARY
+
+          jq -r '
+            .Results[].Vulnerabilities[]? |
+            "| \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion // "-") | \(.VulnerabilityID) | \(.PrimaryURL) |"
+          ' trivy-report.json >> $GITHUB_STEP_SUMMARY
