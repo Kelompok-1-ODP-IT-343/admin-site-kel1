@@ -52,11 +52,41 @@ export default function ViewCustomerDialog({
   onOpenChange: (open: boolean) => void;
   customer: Customer | null;
 }) {
-  if (!customer) return null;
-
+  const defaultCustomer: Customer = {
+    id: "",
+    name: "",
+    username: "",
+    email: "",
+    phone: "",
+    nik: "",
+    npwp: "",
+    birth_date: "",
+    birth_place: "",
+    gender: "",
+    marital_status: "",
+    address: "",
+    sub_district: "",
+    district: "",
+    city: "",
+    province: "",
+    postal_code: "",
+    ktp: "",
+    slip: "",
+    credit_score: 3,
+    credit_status: "Lancar",
+    occupation: "",
+    company_postal_code: "",
+    company_name: "",
+    company_address: "",
+    company_district: "",
+    company_subdistrict: "",
+    company_city: "",
+    company_province: "",
+    monthly_income: "",
+  };
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState({ ...customer });
+  const [editedData, setEditedData] = useState({ ...(customer ?? defaultCustomer) });
   const [loading, setLoading] = useState(false);
 
   // Saat dialog dibuka, ambil detail terbaru dari API menggunakan id

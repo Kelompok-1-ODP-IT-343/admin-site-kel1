@@ -152,8 +152,37 @@ export default function ViewPropertyDialog({
     })()
   }, [open, property?.id])
 
+  const sanitizeInteger = (s: string) => s.replace(/\D/g, "");
+  const sanitizeDecimalSigned = (s: string) => {
+    let v = s.replace(/[^0-9.\-]/g, "");
+    v = v.startsWith("-") ? "-" + v.slice(1).replace(/-/g, "") : v.replace(/-/g, "");
+    const i = v.indexOf(".");
+    if (i !== -1) {
+      v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, "");
+    }
+    return v;
+  };
+  const integerFields = [
+    "price",
+    "price_per_sqm",
+    "land_area",
+    "building_area",
+    "bedrooms",
+    "bathrooms",
+    "floors",
+    "garage",
+    "year_built",
+    "maintenance_fee",
+    "pbb_value",
+    "postal_code",
+  ];
+  const coordFields = ["latitude", "longitude"];
+
   const handleChange = (field: string, value: string | number) => {
-    setEditedData((prev) => ({ ...prev, [field]: value }));
+    let v = typeof value === "number" ? String(value) : String(value);
+    if (integerFields.includes(field)) v = sanitizeInteger(v);
+    if (coordFields.includes(field)) v = sanitizeDecimalSigned(v);
+    setEditedData((prev) => ({ ...prev, [field]: v }));
   };
 
   const handleSave = async () => {
@@ -416,6 +445,8 @@ export default function ViewPropertyDialog({
                         <Input
                           value={(editedData as any)[key]}
                           onChange={(e) => handleChange(key, e.target.value)}
+                          inputMode={key === "price" || key === "price_per_sqm" ? "numeric" : undefined}
+                          pattern={key === "price" || key === "price_per_sqm" ? "[0-9]*" : undefined}
                           className="h-7 text-sm max-w-[180px] sm:max-w-[140px]"
                         />
                       )
@@ -485,12 +516,16 @@ export default function ViewPropertyDialog({
                               <Input
                                 value={(editedData as any).latitude}
                                 onChange={(e) => handleChange("latitude", e.target.value)}
+                                inputMode="decimal"
+                                pattern="^-?\\d*\\.?\\d*$"
                                 className="h-7 text-sm w-[80px]"
                                 placeholder="Lat"
                               />
                               <Input
                                 value={(editedData as any).longitude}
                                 onChange={(e) => handleChange("longitude", e.target.value)}
+                                inputMode="decimal"
+                                pattern="^-?\\d*\\.?\\d*$"
                                 className="h-7 text-sm w-[80px]"
                                 placeholder="Long"
                               />
@@ -516,6 +551,8 @@ export default function ViewPropertyDialog({
                               <Input
                                 value={value}
                                 onChange={(e) => handleChange(key, e.target.value)}
+                                inputMode={["land_area","building_area","bedrooms","bathrooms","floors","garage","year_built","maintenance_fee","pbb_value","postal_code"].includes(key as string) ? "numeric" : undefined}
+                                pattern={["land_area","building_area","bedrooms","bathrooms","floors","garage","year_built","maintenance_fee","pbb_value","postal_code"].includes(key as string) ? "[0-9]*" : undefined}
                                 className="h-7 text-sm max-w-[140px]"
                               />
                               {unit === "m²" && <span className="text-gray-500 text-xs">m²</span>}
@@ -556,6 +593,8 @@ export default function ViewPropertyDialog({
                           <Input
                             value={val ?? ""}
                             onChange={(e) => handleChange(key, e.target.value)}
+                            inputMode={key === "postal_code" ? "numeric" : undefined}
+                            pattern={key === "postal_code" ? "[0-9]*" : undefined}
                             className="h-7 text-sm max-w-[180px] sm:max-w-[140px]"
                           />
                         ) : (
