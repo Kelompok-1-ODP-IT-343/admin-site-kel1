@@ -61,23 +61,21 @@ jobs:
       - name: Get SHA Tag
         id: image
         run: |
-          TAG=$(echo "${{ steps.meta.outputs.tags }}" | grep 'sha-' | head -n 1)
+          TAG=$(echo "${{ steps.meta.outputs.tags }}" | grep 'sha-' | head -n 1 | sed 's|.*/||')
           echo "sha_tag=$TAG" >> $GITHUB_OUTPUT
           echo "Using tag: $TAG"
-
 
       - name: Trivy Scan (JSON)
         id: trivy
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/admin-site-kel1:${{ steps.image.outputs.sha_tag }}
+          image-ref: maulanabn99/admin-site-kel1:${{ steps.image.outputs.sha_tag }}
           format: json
           vuln-type: os,library
           severity: CRITICAL
           exit-code: 0
           ignore-unfixed: false
           output: trivy-report.json
-
 
       - name: Upload Trivy Summary
         run: |
