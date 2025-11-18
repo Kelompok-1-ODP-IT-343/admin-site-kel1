@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { customers } from "@/components/data/approvekpr"
 import { getPengajuanDetail } from "@/services/approvekpr"
+import { getCreditScore } from "@/services/creditScore"
 import { Button } from "@/components/ui/button"
 import AssignApprovalDialog from "@/components/dialogs/AssignTo";
 // import jsPDF from "jspdf"
@@ -93,19 +94,36 @@ function SimulateContent(): JSX.Element {
   const ktp = documents.find((d: any) => d.documentType === "KTP")?.filePath
   const slip = documents.find((d: any) => d.documentType === "SLIP_GAJI")?.filePath
   
-  // --- FICO score (seeded by URL id) ---
+  // --- FICO score integration ---
   const idNum = parseInt(id ?? "1", 10)
   const seededRandom = (seed: number): number => {
     const x = Math.sin(seed) * 10000
     return x - Math.floor(x)
   }
+  const fallbackScore: number = Math.floor(300 + seededRandom(idNum) * 550)
+  const [creditScore, setCreditScore] = useState<number | null>(null)
+  const [creditLoading, setCreditLoading] = useState(false)
+  const [creditError, setCreditError] = useState<string | null>(null)
 
-  const score: number = Math.floor(300 + seededRandom(idNum) * 550)
-  const scoreLabel =
-    score >= 740 ? "Excellent" :
-    score >= 670 ? "Good" :
-    score >= 580 ? "Fair" :
-    "Poor"
+  useEffect(() => {
+    // ambil user id dari pengajuan.userInfo kalau tersedia, fallback ke id aplikasi
+    const uid = (pengajuan?.userInfo?.id as any) ?? idNum
+    if (!uid) return
+    setCreditLoading(true)
+    setCreditError(null)
+    getCreditScore(uid)
+      .then((res) => {
+        if (res && typeof res.score === "number") {
+          setCreditScore(Math.round(res.score))
+        } else {
+          setCreditError("Score tidak tersedia")
+        }
+      })
+      .catch(() => setCreditError("Gagal mengambil credit score"))
+      .finally(() => setCreditLoading(false))
+  }, [pengajuan, idNum])
+
+  const score = creditScore ?? fallbackScore
 
   // pakai data dari API:
   customer?.fullName ?? "-"
@@ -509,15 +527,27 @@ function SimulateContent(): JSX.Element {
                       "#16a34a"
                     }
                   >
-                    {score <= 560 ? "Very Bad" :
-                    score <= 650 ? "Bad" :
-                    score <= 700 ? "Fair" :
-                    score <= 750 ? "Good" :
-                    "Excellent"}
+                    {creditLoading
+                      ? "Loading"
+                      : score <= 560
+                        ? "Very Bad"
+                        : score <= 650
+                          ? "Bad"
+                          : score <= 700
+                            ? "Fair"
+                            : score <= 750
+                              ? "Good"
+                              : "Excellent"}
                   </text>
                 </svg>
               </div>
             </div>
+            {creditError && (
+              <p className="mt-2 text-xs text-red-600">{creditError}</p>
+            )}
+            {creditLoading && !creditError && (
+              <p className="mt-2 text-xs text-muted-foreground">Mengambil credit score...</p>
+            )}
           </div>
 
 
