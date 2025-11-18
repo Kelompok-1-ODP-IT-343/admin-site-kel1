@@ -25,7 +25,8 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-import { getUserProfile } from "@/services/akun";
+import { getUserProfile, updateUserProfile } from "@/services/akun";
+import { toast } from "sonner";
 import coreApi from "@/lib/coreApi";
 import { usePathname } from "next/navigation";
 
@@ -183,7 +184,7 @@ function AkunContent() {
               {/* Menu Items */}
               <SidebarItem
                 active={active === "settings"}
-                title="Account Information"
+                title="Account Settings"
                 icon={<Settings className="h-5 w-5" />}
                 onClick={() => {
                   setActive("settings");
@@ -290,6 +291,28 @@ function SidebarItem({
 
 /* Content */
 function SettingsContent({ user }: { user: any }) {
+  const [fullName, setFullName] = useState<string>(user?.fullName || "");
+  const [username, setUsername] = useState<string>(user?.username || "");
+  const [phone, setPhone] = useState<string>(user?.phone || "");
+  const [saving, setSaving] = useState<boolean>(false);
+
+  const handleSave = async () => {
+    if (!user?.id) return;
+    setSaving(true);
+    try {
+      await toast.promise(
+        updateUserProfile(user.id, { fullName, username, phone }),
+        {
+          loading: "Menyimpan perubahan...",
+          success: "Perubahan berhasil disimpan.",
+          error: (e) => e?.response?.data?.message || e?.message || "Gagal menyimpan perubahan.",
+        }
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="akun w-full">
       <Tabs defaultValue="account" className="w-full">
@@ -302,7 +325,7 @@ function SettingsContent({ user }: { user: any }) {
         <TabsContent value="account">
           <Card>
             <CardHeader>
-              <CardTitle>Account Information</CardTitle>
+              <CardTitle>Account Settings</CardTitle>
               <CardDescription>
                 Update your personal information here. Click save when finished.
               </CardDescription>
@@ -311,7 +334,7 @@ function SettingsContent({ user }: { user: any }) {
             <CardContent className="grid gap-6 md:grid-cols-2">
               <div className="grid gap-3">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" readOnly className="bg-gray-50 cursor-not-allowed" defaultValue={user?.fullName || ""} />
+                <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
               </div>
 
               <div className="grid gap-3">
@@ -321,12 +344,12 @@ function SettingsContent({ user }: { user: any }) {
 
               <div className="grid gap-3">
                 <Label htmlFor="username">Username</Label>
-                <Input id="username" defaultValue={user?.username || ""} />
+                <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
               </div>
 
               <div className="grid gap-3">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" readOnly className="bg-gray-50 cursor-not-allowed" defaultValue={user?.phone || "-"} />
+                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
 
               <div className="grid gap-3">
@@ -361,6 +384,15 @@ function SettingsContent({ user }: { user: any }) {
             </CardContent>
 
             <CardFooter>
+              <div className="w-full flex items-center justify-end gap-3">
+                <Button
+                  className="ml-auto bg-[#0B63E5] hover:bg-[#094ec1]"
+                  disabled={saving}
+                  onClick={handleSave}
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -645,7 +677,7 @@ function HelpContent() {
           {
             id: "4",
             q: "Bagaimana cara memperbarui data pengguna admin?",
-            a: "Buka Account Information → Account untuk memperbarui nama, email, atau jabatan. Klik Save Changes untuk menyimpan perubahan.",
+            a: "Buka Account Settings → Account untuk memperbarui nama, email, atau jabatan. Klik Save Changes untuk menyimpan perubahan.",
           },
           {
             id: "5",
