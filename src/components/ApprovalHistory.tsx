@@ -170,33 +170,51 @@ export default function ApprovalHistory() {
       accessorKey: "status",
       header: () => <div className="font-semibold">Status</div>,
       cell: ({ row }) => {
-        const status = (row.getValue("status") as string) || ""
-        
-        // 🔹 Mapping status ke label & warna
-        const statusMap: Record<string, { label: string; color: string }> = {
-          PROPERTY_APPRAISAL: { label: "Property Appraisal", color: "bg-blue-200 text-blue-900 hover:bg-blue-300" },
-          CREDIT_ANALYSIS: { label: "Credit Analysis", color: "bg-amber-200 text-amber-900 hover:bg-amber-300" },
-          FINAL_APPROVAL: { label: "Final Approval", color: "bg-purple-200 text-purple-900 hover:bg-purple-300" },
-          ACCEPTED: { label: "Accepted", color: "bg-green-200 text-green-900 hover:bg-green-300" },
-          REJECTED: { label: "Rejected", color: "bg-rose-200 text-rose-900 hover:bg-rose-300" },
-          APPROVAL_PENDING: { label: "Approval Pending", color: "bg-gray-200 text-gray-800 hover:bg-gray-300" },
+        const status = row.getValue("status") as string
+        const getStatusConfig = (s: string) => {
+          switch (s?.toUpperCase()) {
+            case "PROPERTY_APPRAISAL":
+              return { text: "Property Appraisal", bgColor: "bg-purple-200 hover:bg-purple-300", textColor: "text-purple-900", dotColor: "bg-purple-700" }
+            case "DRAFT":
+              return { text: "Draft", bgColor: "bg-gray-200 hover:bg-gray-300", textColor: "text-gray-900", dotColor: "bg-gray-700" }
+            case "SUBMITTED":
+              return { text: "Submitted", bgColor: "bg-blue-200 hover:bg-blue-300", textColor: "text-blue-900", dotColor: "bg-blue-700" }
+            case "UNDER_REVIEW":
+              return { text: "Under Review", bgColor: "bg-yellow-200 hover:bg-yellow-300", textColor: "text-yellow-900", dotColor: "bg-yellow-700" }
+            case "APPROVED":
+            case "APPROVE":
+              return { text: "Approved", bgColor: "bg-green-200 hover:bg-green-300", textColor: "text-green-900", dotColor: "bg-green-700" }
+            case "REJECTED":
+            case "REJECT":
+              return { text: "Rejected", bgColor: "bg-rose-200 hover:bg-rose-300", textColor: "text-rose-900", dotColor: "bg-rose-700" }
+            case "CANCELLED":
+              return { text: "Cancelled", bgColor: "bg-red-200 hover:bg-red-300", textColor: "text-red-900", dotColor: "bg-red-700" }
+            case "DOCUMENT_VERIFICATION":
+              return { text: "Document Verification", bgColor: "bg-indigo-200 hover:bg-indigo-300", textColor: "text-indigo-900", dotColor: "bg-indigo-700" }
+            case "CREDIT_ANALYSIS":
+              return { text: "Credit Analysis", bgColor: "bg-teal-200 hover:bg-teal-300", textColor: "text-teal-900", dotColor: "bg-teal-700" }
+            case "APPROVAL_PENDING":
+              return { text: "Approval Pending", bgColor: "bg-orange-200 hover:bg-orange-300", textColor: "text-orange-900", dotColor: "bg-orange-700" }
+            case "DISBURSED":
+              return { text: "Disbursed", bgColor: "bg-emerald-200 hover:bg-emerald-300", textColor: "text-emerald-900", dotColor: "bg-emerald-700" }
+            default:
+              return { text: s || "Unknown", bgColor: "bg-slate-200 hover:bg-slate-300", textColor: "text-slate-900", dotColor: "bg-slate-700" }
+          }
         }
 
-        const current = statusMap[status] || { label: status, color: "bg-gray-200 text-gray-700" }
-        const label = (current.label || "").replace(/_/g, " ")
-
+        const config = getStatusConfig(status)
         return (
           <Button
-            type="button"
             size="sm"
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-md font-semibold shadow-sm cursor-pointer ${current.color}`}
+            variant="ghost"
             onClick={() => {
               setSelectedRow(row.original)
               setOpenDialog(true)
             }}
+            className={`flex items-center gap-2 px-3 py-1 rounded-md font-semibold shadow-sm ${config.bgColor} ${config.textColor}`}
           >
-            <span className="h-2.5 w-2.5 rounded-full bg-current" />
-            {label}
+            <span className={`h-2.5 w-2.5 rounded-full ${config.dotColor}`} />
+            {config.text}
           </Button>
         )
       },

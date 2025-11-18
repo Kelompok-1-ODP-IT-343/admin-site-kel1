@@ -46,6 +46,7 @@ export default function ViewApprovalDetails({
     assignedToEmail: string
     status: "PENDING" | "APPROVED" | "REJECTED" | string
     approvalNotes?: string | null
+    rejectionReason?: string | null
   }
 
   const [workflows, setWorkflows] = useState<ApprovalWorkflow[]>([])
@@ -215,7 +216,11 @@ export default function ViewApprovalDetails({
                         >
                           <div className="text-xs font-semibold text-gray-600">Catatan</div>
                           <div className="text-sm text-gray-800 break-words">
-                            {step.approvalNotes && String(step.approvalNotes).trim() ? String(step.approvalNotes) : "-"}
+                            {(() => {
+                              const t = (step.status || "").toUpperCase();
+                              const content = t === "REJECTED" ? (step.rejectionReason ?? step.approvalNotes) : step.approvalNotes;
+                              return content && String(content).trim() ? String(content) : "-";
+                            })()}
                           </div>
                         </div>
                       )}

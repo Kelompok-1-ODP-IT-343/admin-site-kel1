@@ -771,7 +771,7 @@ function SimulateContent(): JSX.Element {
                       return formatPct(loan / price);
                     })(),
                   ],
-                  ["Tujuan", formatOccupation(pengajuan?.purpose)],
+                  ["Tujuan", pengajuan?.purpose ?? "-"],
                   ["Diajukan", formatDate(pengajuan?.submittedAt ?? pengajuan?.tanggal)],
                   ["Catatan", pengajuan?.notes ?? "-"],
                 ].map(([label, value]) => (
