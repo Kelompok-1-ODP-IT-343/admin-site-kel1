@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -31,9 +31,23 @@ const COLORS = {
 const MAX_BORROWERS = 20000;
 
 
-export default function AnalyticsKpiRadial() {
-  const [range, setRange] = useState("30d");
-  const ranges = ["7d", "30d", "90d", "YTD"];
+type Kpi = {
+  approved?: { total?: number; changePercentage?: number }
+  rejected?: { total?: number; changePercentage?: number }
+  pending?: { total?: number; changePercentage?: number }
+  customers?: { total?: number; changePercentage?: number }
+} | null
+
+export default function AnalyticsKpiRadial({
+  range,
+  onRangeChange,
+  kpi,
+}: {
+  range: string
+  onRangeChange: (r: string) => void
+  kpi: Kpi
+}) {
+  const ranges = ["7d", "30d", "90d", "ytd"];
   type KpiItem = {
     title: string;
     subtitle: string;
@@ -44,37 +58,22 @@ export default function AnalyticsKpiRadial() {
     unit: string;
   };
 
-type KpiRangeKey = "7d" | "30d" | "90d" | "YTD";
-  // Data KPI per range
-  const kpiRanges = {
-    "7d": [
-      { title: "Approve", subtitle: "Total Approved", value: 15, trend: +3.2, icon: CheckCircle2, color: COLORS.teal, unit: "" },
-      { title: "Reject", subtitle: "Total Rejected", value: 4, trend: -0.8, icon: XCircle, color: COLORS.orange, unit: "" },
-      { title: "Pending", subtitle: "Total Pending", value: 6, trend: +1.5, icon: Hourglass, color: COLORS.lime, unit: "" },
-      { title: "Customers", subtitle: "Nasabah Aktif", value: 2500, trend: +1.2, icon: Users, color: COLORS.teal, unit: "rb" },
-    ],
-    "30d": [
-      { title: "Approve", subtitle: "Total Approved", value: 82, trend: +5.2, icon: CheckCircle2, color: COLORS.teal, unit: "" },
-      { title: "Reject", subtitle: "Total Rejected", value: 18, trend: -1.4, icon: XCircle, color: COLORS.orange, unit: "" },
-      { title: "Pending", subtitle: "Total Pending", value: 27, trend: +3.1, icon: Hourglass, color: COLORS.lime, unit: "" },
-      { title: "Customers", subtitle: "Nasabah Aktif", value: 8200, trend: +2.8, icon: Users, color: COLORS.teal, unit: "rb" },
-    ],
-    "90d": [
-      { title: "Approve", subtitle: "Total Approved", value: 210, trend: +7.9, icon: CheckCircle2, color: COLORS.teal, unit: "" },
-      { title: "Reject", subtitle: "Total Rejected", value: 45, trend: -2.2, icon: XCircle, color: COLORS.orange, unit: "" },
-      { title: "Pending", subtitle: "Total Pending", value: 60, trend: +4.4, icon: Hourglass, color: COLORS.lime, unit: "" },
-      { title: "Customers", subtitle: "Nasabah Aktif", value: 15200, trend: +3.4, icon: Users, color: COLORS.teal, unit: "rb" },
-    ],
-    "YTD": [
-      { title: "Approve", subtitle: "Total Approved", value: 780, trend: +9.8, icon: CheckCircle2, color: COLORS.teal, unit: "" },
-      { title: "Reject", subtitle: "Total Rejected", value: 180, trend: -3.0, icon: XCircle, color: COLORS.orange, unit: "" },
-      { title: "Pending", subtitle: "Total Pending", value: 110, trend: +5.5, icon: Hourglass, color: COLORS.lime, unit: "" },
-      { title: "Customers", subtitle: "Nasabah Aktif", value: 19300, trend: +4.1, icon: Users, color: COLORS.teal, unit: "rb" },
-    ],
-  };
-
-  // Ambil data sesuai range
-  const kpiData: KpiItem[] = kpiRanges[range as KpiRangeKey];
+  const kpiData: KpiItem[] = useMemo(() => {
+    const a = kpi?.approved?.total ?? 0
+    const ar = kpi?.approved?.changePercentage ?? 0
+    const r = kpi?.rejected?.total ?? 0
+    const rr = kpi?.rejected?.changePercentage ?? 0
+    const p = kpi?.pending?.total ?? 0
+    const pr = kpi?.pending?.changePercentage ?? 0
+    const c = kpi?.customers?.total ?? 0
+    const cr = kpi?.customers?.changePercentage ?? 0
+    return [
+      { title: "Approve", subtitle: "Total Approved", value: a, trend: ar, icon: CheckCircle2, color: COLORS.teal, unit: "" },
+      { title: "Reject", subtitle: "Total Rejected", value: r, trend: rr, icon: XCircle, color: COLORS.orange, unit: "" },
+      { title: "Pending", subtitle: "Total Pending", value: p, trend: pr, icon: Hourglass, color: COLORS.lime, unit: "" },
+      { title: "Customers", subtitle: "Nasabah Aktif", value: c, trend: cr, icon: Users, color: COLORS.teal, unit: "" },
+    ]
+  }, [kpi])
 
 
   return (
@@ -85,7 +84,7 @@ type KpiRangeKey = "7d" | "30d" | "90d" | "YTD";
           {ranges.map((r) => (
             <button
               key={r}
-              onClick={() => setRange(r)}
+              onClick={() => onRangeChange(r)}
               className={`px-3 py-1 text-sm font-medium transition-colors ${
                 range === r
                   ? "bg-black text-white dark:bg-white dark:text-black"

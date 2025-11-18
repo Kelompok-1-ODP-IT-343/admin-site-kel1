@@ -20,10 +20,13 @@ import PropertiesList from "@/components/ListProperties"
 import ApprovalProperties from "@/components/ApprovalProperties"
 import ApprovalHistory from "@/components/ApprovalHistory"
 import TimeTicker from "@/components/TimeTicker"
+import coreApi from "@/lib/coreApi"
 
 export default function Dashboard() {
   const router = useRouter()
   const [activeMenu, setActiveMenu] = useState("Home")
+  const [range, setRange] = useState("30d")
+  const [stats, setStats] = useState<any | null>(null)
   // Removed per-second state updates on the whole Dashboard to avoid re-rendering tables/menus
 
 
@@ -42,6 +45,23 @@ export default function Dashboard() {
     }
   }, [router])
 
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      try {
+        const res = await coreApi.get("/stat-admin/dashboard", { params: { range } })
+        const payload = res?.data?.data ?? null
+        if (!cancelled) setStats(payload)
+      } catch {
+        if (!cancelled) setStats(null)
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [range])
+
   // 🔧 Logout handler: hapus token dari cookie
   const handleLogout = () => {
     document.cookie = "token=; path=/; max-age=0;" // hapus cookie
@@ -53,8 +73,17 @@ export default function Dashboard() {
       case "Home":
         return (
           <div className="space-y-8 p-6">
-            <AnalyticsDashboard />
-            <ChartsSection />
+            <AnalyticsDashboard
+              range={range}
+              onRangeChange={setRange}
+              kpi={stats?.kpi ?? null}
+            />
+            <ChartsSection
+              growthDemand={(stats?.growthAndDemand?.data ?? []).map((d: any) => ({ name: String(d.month || ""), approval: Number(d.approval || 0), reject: Number(d.reject || 0) }))}
+              outstandingLoan={(stats?.outstandingLoan?.data ?? []).map((d: any) => ({ name: String(d.month || ""), value: Number(d.value || 0) }))}
+              funnel={(stats?.processingFunnel?.stages ?? []).map((s: any) => ({ name: String(s.stage || ""), value: Number(s.count || 0) }))}
+              userRegistered={(stats?.userRegistered?.data ?? []).map((d: any) => ({ month: String(d.month || ""), total: Number(d.count || 0) }))}
+            />
           </div>
         )
       case "Assign KPR":

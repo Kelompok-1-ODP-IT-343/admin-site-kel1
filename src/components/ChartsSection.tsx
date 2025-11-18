@@ -39,13 +39,23 @@ const repayment = [
   { name:"Default", value:10, color:"#9CA3AF" },
 ];
 
-export default function ChartsSection() {
+export default function ChartsSection({
+  growthDemand,
+  outstandingLoan,
+  funnel,
+  userRegistered,
+}: {
+  growthDemand?: { name: string; approval: number; reject: number }[]
+  outstandingLoan?: { name: string; value: number }[]
+  funnel?: { name: string; value: number }[]
+  userRegistered?: { month: string; total: number }[]
+}) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Growth & Demand */}
       <ChartCard title="Growth & Demand">
         <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={growthDemand}>
+          <AreaChart data={growthDemand ?? []}>
             <defs>
               <linearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={COLORS.blue} stopOpacity={0.4} />
@@ -69,7 +79,7 @@ export default function ChartsSection() {
       {/* Outstanding Loan */}
       <ChartCard title="Outstanding Loan (Miliar Rupiah)">
         <ResponsiveContainer width="100%" height={260}>
-          <LineChart data={outstandingLoan}>
+          <LineChart data={outstandingLoan ?? []}>
             <CartesianGrid strokeDasharray="3 3" stroke={`${COLORS.gray}33`} />
             <XAxis dataKey="name" stroke={COLORS.gray} tick={{ fontSize: 12 }} />
             <YAxis stroke={COLORS.gray} tick={{ fontSize: 12 }} />
@@ -82,7 +92,7 @@ export default function ChartsSection() {
       {/* Funnel */}
       <ChartCard title="Processing Funnel">
         <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={funnel}>
+          <BarChart data={(funnel ?? []).map((f) => ({ ...f, name: String(f.name).replace(/\s+/g, "\n") }))}>
             <CartesianGrid strokeDasharray="3 3" stroke={`${COLORS.gray}33`} />
 
             <XAxis
@@ -93,16 +103,15 @@ export default function ChartsSection() {
             />
 
             {(() => {
-              const maxValue = Math.max(...funnel.map((d) => d.value));
+              const fv = funnel ?? []
+              const maxValue = fv.length > 0 ? Math.max(...fv.map((d) => d.value)) : 0;
               const upperLimit = maxValue + 50;
-
               const step = 70;
-              const ticks = [];
+              const ticks: number[] = [];
               for (let i = 0; i <= upperLimit; i += step) ticks.push(i);
               if (!ticks.includes(maxValue)) ticks.push(maxValue);
               if (!ticks.includes(upperLimit)) ticks.push(upperLimit);
               ticks.sort((a, b) => a - b);
-
               return (
                 <YAxis
                   stroke={COLORS.gray}
@@ -130,20 +139,7 @@ export default function ChartsSection() {
           <div className="mx-auto aspect-square max-h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart
-                data={[
-                  { month: "Jan", total: 120 },
-                  { month: "Feb", total: 140 },
-                  { month: "Mar", total: 165 },
-                  { month: "Apr", total: 190 },
-                  { month: "Mei", total: 210 },
-                  { month: "Jun", total: 250 },
-                  { month: "Jul", total: 270 },
-                  { month: "Agu", total: 295 },
-                  { month: "Sep", total: 320 },
-                  { month: "Okt", total: 350 },
-                  { month: "Nov", total: 370 },
-                  { month: "Des", total: 400 },
-                ]}
+                data={userRegistered ?? []}
               >
                 <PolarGrid radialLines={false} />
                 <PolarAngleAxis dataKey="month" />
