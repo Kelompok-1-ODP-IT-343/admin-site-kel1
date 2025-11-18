@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/tabs"
 
 import { getUserProfile } from "@/services/akun";
+import coreApi from "@/lib/coreApi";
 import { usePathname } from "next/navigation";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -182,7 +183,7 @@ function AkunContent() {
               {/* Menu Items */}
               <SidebarItem
                 active={active === "settings"}
-                title="Account Settings"
+                title="Account Information"
                 icon={<Settings className="h-5 w-5" />}
                 onClick={() => {
                   setActive("settings");
@@ -310,12 +311,12 @@ function SettingsContent({ user }: { user: any }) {
             <CardContent className="grid gap-6 md:grid-cols-2">
               <div className="grid gap-3">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" defaultValue={user?.fullName || ""} />
+                <Input id="name" readOnly className="bg-gray-50 cursor-not-allowed" defaultValue={user?.fullName || ""} />
               </div>
 
               <div className="grid gap-3">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={user?.email || ""} />
+                <Input id="email" type="email" readOnly className="bg-gray-50 cursor-not-allowed" defaultValue={user?.email || ""} />
               </div>
 
               <div className="grid gap-3">
@@ -325,7 +326,7 @@ function SettingsContent({ user }: { user: any }) {
 
               <div className="grid gap-3">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" defaultValue={user?.phone || "-"} />
+                <Input id="phone" readOnly className="bg-gray-50 cursor-not-allowed" defaultValue={user?.phone || "-"} />
               </div>
 
               <div className="grid gap-3">
@@ -360,9 +361,6 @@ function SettingsContent({ user }: { user: any }) {
             </CardContent>
 
             <CardFooter>
-              <Button className="ml-auto bg-[#0B63E5] hover:bg-[#094ec1]">
-                Save Changes
-              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -380,24 +378,26 @@ function SettingsContent({ user }: { user: any }) {
             <CardContent className="grid gap-6">
               <div className="grid gap-3">
                 <Label htmlFor="currentPassword">Current Password</Label>
-                <Input id="currentPassword" type="password" placeholder="••••••••" />
+                <Input id="currentPassword" type="password" readOnly className="bg-gray-50 cursor-not-allowed" placeholder="••••••••" />
               </div>
 
               <div className="grid gap-3">
                 <Label htmlFor="newPassword">New Password</Label>
-                <Input id="newPassword" type="password" placeholder="••••••••" />
+                <Input id="newPassword" type="password" readOnly className="bg-gray-50 cursor-not-allowed" placeholder="••••••••" />
               </div>
 
               <div className="grid gap-3">
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input id="confirmPassword" type="password" placeholder="••••••••" />
+                <Input id="confirmPassword" type="password" readOnly className="bg-gray-50 cursor-not-allowed" placeholder="••••••••" />
               </div>
             </CardContent>
 
+            <div className="px-6 pb-2 text-sm text-muted-foreground font-semibold">
+              Ganti Password tidak tersedia untuk Admin. Hubungi support@satuatap.com untuk mengganti password.
+            </div>
+
             <CardFooter>
-              <Button className="ml-auto bg-[#0B63E5] hover:bg-[#094ec1]">
-                Save Password
-              </Button>
+
             </CardFooter>
           </Card>
         </TabsContent>
@@ -407,95 +407,109 @@ function SettingsContent({ user }: { user: any }) {
 }
 
 function NotificationsContent() {
-  // Dummy data (selalu unread tiap render)
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "Operation Successful",
-      desc: "Property has been successfully added to the listing.",
-      type: "success",
-      read: false,
-    },
-    {
-      id: 2,
-      title: "Operation Successful",
-      desc: "Customer approval process completed successfully.",
-      type: "success",
-      read: false,
-    },
-    {
-      id: 3,
-      title: "Proceed with Caution",
-      desc: "This action might have unintended consequences. Double-check your decision before proceeding.",
-      type: "warning",
-      read: false,
-    },
-    {
-      id: 4,
-      title: "Important Information",
-      desc: "Make sure to review the recent platform updates before submitting a new property.",
-      type: "info",
-      read: false,
-    },
-    {
-      id: 5,
-      title: "Something Went Wrong",
-      desc: "An error occurred while processing your request. Please try again later.",
-      type: "error",
-      read: false,
-    },
-  ]);
-
-  // hanya efek visual di runtime, tapi tidak disimpan
-  const handleClick = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+  type Notification = {
+    id: number;
+    userId: number;
+    notificationType: string;
+    title: string;
+    message: string;
+    channel: string;
+    status: string;
+    scheduledAt: string | null;
+    sentAt: string | null;
+    deliveredAt: string | null;
+    readAt: string | null;
+    metadata: Record<string, unknown> | null;
+    createdAt: string;
+    read: boolean;
   };
 
-  const getStyle = (type: string) => {
-    switch (type) {
-      case "success":
-        return {
-          border: "border-emerald-400",
-          bg: "bg-emerald-50",
-          text: "text-emerald-700",
-          icon: <CircleCheckBig className="size-4 text-emerald-600" />,
-        };
-      case "warning":
-        return {
-          border: "border-amber-400",
-          bg: "bg-amber-50",
-          text: "text-amber-700",
-          icon: <AlertTriangle className="size-4 text-amber-600" />,
-        };
-      case "info":
-        return {
-          border: "border-cyan-400",
-          bg: "bg-cyan-50",
-          text: "text-cyan-700",
-          icon: <Info className="size-4 text-cyan-600" />,
-        };
-      case "error":
-        return {
-          border: "border-red-400",
-          bg: "bg-red-50",
-          text: "text-red-700",
-          icon: <OctagonAlert className="size-4 text-red-600" />,
-        };
-      default:
-        return {
-          border: "border-gray-300",
-          bg: "bg-gray-50",
-          text: "text-gray-700",
-          icon: <Info className="size-4 text-gray-500" />,
-        };
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [page, setPage] = useState<number>(1);
+  const pageSize = 5;
+
+  useEffect(() => {
+    async function fetchNotifications() {
+      try {
+        setError(null);
+        setLoading(true);
+        const res = await coreApi.get("/notifications/user");
+        const list = (res?.data?.data ?? []) as any[];
+        const mapped: Notification[] = list.map((n) => ({
+          id: Number(n.id),
+          userId: Number(n.userId),
+          notificationType: String(n.notificationType || ""),
+          title: String(n.title || ""),
+          message: String(n.message || ""),
+          channel: String(n.channel || "IN_APP"),
+          status: String(n.status || "PENDING"),
+          scheduledAt: n.scheduledAt ?? null,
+          sentAt: n.sentAt ?? null,
+          deliveredAt: n.deliveredAt ?? null,
+          readAt: n.readAt ?? null,
+          metadata: n.metadata ?? null,
+          createdAt: String(n.createdAt || new Date().toISOString()),
+          read: Boolean(n.readAt),
+        }));
+        setNotifications(mapped);
+        setPage(1);
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.message || "Gagal memuat notifikasi";
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
     }
+    fetchNotifications();
+  }, []);
+
+  const maxPage = Math.max(1, Math.ceil(notifications.length / pageSize));
+  const paged = notifications.slice((page - 1) * pageSize, page * pageSize);
+  const goPrev = () => setPage((p) => Math.max(1, p - 1));
+  const goNext = () => setPage((p) => Math.min(maxPage, p + 1));
+
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+  const markOneRead = (id: number) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  };
+
+  const classifyCategory = (n: Notification): "success" | "info" | "warning" | "error" => {
+    const t = (n.title || "").toLowerCase();
+    const m = (n.message || "").toLowerCase();
+    const has = (s: string) => t.includes(s) || m.includes(s);
+    if (has("berhasil") || has("success") || n.status === "DELIVERED") return "success";
+    if (has("otp") && (has("berhasil") || has("dikirim"))) return "info";
+    if (has("token") && has("berhasil")) return "info";
+    if (has("gagal") || has("error") || n.status === "FAILED") return "error";
+    if (has("caution") || has("hati-hati") || has("warning") || n.status === "PENDING") return "warning";
+    if (n.status === "SENT") return "info";
+    return "info";
+  };
+  const styleByCategory = (cat: "success" | "info" | "warning" | "error") => {
+    switch (cat) {
+      case "success":
+        return { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-700", icon: <CircleCheckBig className="size-4 text-emerald-600" /> };
+      case "info":
+        return { border: "border-cyan-400", bg: "bg-cyan-50", text: "text-cyan-700", icon: <Info className="size-4 text-cyan-600" /> };
+      case "warning":
+        return { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-700", icon: <AlertTriangle className="size-4 text-amber-600" /> };
+      case "error":
+      default:
+        return { border: "border-red-400", bg: "bg-red-50", text: "text-red-700", icon: <OctagonAlert className="size-4 text-red-600" /> };
+    }
+  };
+
+  const titleCaseBadge = (s?: string): string => {
+    if (!s) return "-";
+    return s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
   return (
     <div className="space-y-5">
-      {/* --- Header --- */}
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
           <BellDot className="size-5 text-cyan-600" />
@@ -505,39 +519,52 @@ function NotificationsContent() {
           variant="outline"
           size="sm"
           className="text-sm border-cyan-500 text-cyan-700 hover:bg-cyan-50 transition-colors"
-          onClick={() =>
-            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-          }
+          onClick={markAllRead}
         >
           Mark all as read
         </Button>
       </div>
 
-      {/* --- Notifications List --- */}
+      {loading && (
+        <div className="text-sm text-gray-500">Memuat notifikasi...</div>
+      )}
+      {error && (
+        <Alert className="border-red-300 bg-red-50 text-red-700">
+          <AlertTitle>Gagal memuat</AlertTitle>
+          <AlertDescription className="text-sm">{error}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-3">
-        {notifications.map((notif) => {
-          const style = getStyle(notif.type);
+        {!loading && !error && paged.map((notif) => {
+          const cat = classifyCategory(notif);
+          const style = styleByCategory(cat);
+          const created = new Date(notif.createdAt).toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
           return (
             <div
               key={notif.id}
-              onClick={() => handleClick(notif.id)}
+              onClick={() => markOneRead(notif.id)}
               className={`relative flex items-start gap-3 cursor-pointer p-4 rounded-xl transition-all duration-200 
                 hover:shadow-sm hover:scale-[1.01] border ${style.border} ${style.bg} ${style.text}`}
             >
-              {/* Icon */}
               <div className="mt-1">{style.icon}</div>
-
-              {/* Content */}
               <div className="flex-1">
-                <AlertTitle className="font-semibold">
-                  {notif.title}
-                </AlertTitle>
-                <AlertDescription className="text-sm leading-snug">
-                  {notif.desc}
-                </AlertDescription>
+                <div className="flex items-center justify-between">
+                  <AlertTitle className="font-semibold">{notif.title}</AlertTitle>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/70 border border-gray-300 text-gray-700">{titleCaseBadge(notif.status)}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/70 border border-gray-300 text-gray-700">{titleCaseBadge(notif.channel)}</span>
+                  </div>
+                </div>
+                <AlertDescription className="text-sm leading-snug mt-1">{notif.message}</AlertDescription>
+                <div className="text-xs text-gray-500 mt-1">{created}</div>
               </div>
-
-              {/* 🔵 Unread Dot */}
               {!notif.read && (
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 size-3 bg-cyan-500 rounded-full shadow-sm ring-2 ring-white"></span>
               )}
@@ -545,6 +572,30 @@ function NotificationsContent() {
           );
         })}
       </div>
+
+      {!loading && !error && (
+        <div className="flex items-center justify-end gap-3">
+          <span className="text-xs text-gray-600">Page {page} / {maxPage}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-sm"
+            onClick={goPrev}
+            disabled={page <= 1}
+          >
+            Prev
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-sm"
+            onClick={goNext}
+            disabled={page >= maxPage}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -594,7 +645,7 @@ function HelpContent() {
           {
             id: "4",
             q: "Bagaimana cara memperbarui data pengguna admin?",
-            a: "Buka Account Settings → Account untuk memperbarui nama, email, atau jabatan. Klik Save Changes untuk menyimpan perubahan.",
+            a: "Buka Account Information → Account untuk memperbarui nama, email, atau jabatan. Klik Save Changes untuk menyimpan perubahan.",
           },
           {
             id: "5",

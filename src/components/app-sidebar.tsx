@@ -182,7 +182,7 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
 
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/akun?tab=settings")}>
-              <Settings className="mr-2 h-4 w-4" /> Account Settings
+              <Settings className="mr-2 h-4 w-4" /> Account Information
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/akun?tab=notifications")}>
               <Bell className="mr-2 h-4 w-4" /> Notifications
@@ -301,7 +301,7 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
 
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/akun?tab=settings")}>
-              <Settings className="mr-2 h-4 w-4" /> Account Settings
+              <Settings className="mr-2 h-4 w-4" /> Account Information
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/akun?tab=notifications")}>
               <Bell className="mr-2 h-4 w-4" /> Notifications
