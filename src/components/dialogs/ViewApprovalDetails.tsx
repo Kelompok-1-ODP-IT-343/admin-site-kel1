@@ -45,6 +45,7 @@ export default function ViewApprovalDetails({
     assignedToName: string
     assignedToEmail: string
     status: "PENDING" | "APPROVED" | "REJECTED" | string
+    approvalNotes?: string | null
   }
 
   const [workflows, setWorkflows] = useState<ApprovalWorkflow[]>([])
@@ -116,6 +117,13 @@ export default function ViewApprovalDetails({
     if (t === "APPROVED") return { backgroundColor: "#E6F6E6", color: "#15803D" }
     if (t === "REJECTED") return { backgroundColor: "#FEE2E2", color: "#991B1B" }
     return { backgroundColor: "#E5E7EB", color: "#1F2937" }
+  }
+
+  const getNotesContainerStyle = (s: string): React.CSSProperties => {
+    const t = (s || "").toUpperCase()
+    if (t === "APPROVED") return { backgroundColor: "#E6F6E6", borderColor: "#15803D" }
+    if (t === "REJECTED") return { backgroundColor: "#FEE2E2", borderColor: "#991B1B" }
+    return { backgroundColor: "#E5E7EB", borderColor: "#9CA3AF" }
   }
 
   return (
@@ -200,6 +208,17 @@ export default function ViewApprovalDetails({
                           {statusLabel(step.status)}
                         </Badge>
                       </div>
+                      {(["APPROVED", "REJECTED"].includes((step.status || "").toUpperCase())) && (
+                        <div
+                          className="mt-3 rounded-lg border p-3"
+                          style={getNotesContainerStyle(step.status)}
+                        >
+                          <div className="text-xs font-semibold text-gray-600">Catatan</div>
+                          <div className="text-sm text-gray-800 break-words">
+                            {step.approvalNotes && String(step.approvalNotes).trim() ? String(step.approvalNotes) : "-"}
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>

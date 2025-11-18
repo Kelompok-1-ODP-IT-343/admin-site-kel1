@@ -195,9 +195,9 @@ export default function ApprovalTable() {
                   key={row.id}
                   className="hover:bg-muted/30 transition-colors duration-150 divide-x divide-border"
                 >
-                  {/* Kolom nomor urut */}
+                  {/* Kolom nomor urut (berdasarkan halaman) */}
                   <TableCell className="py-3 px-4 text-sm font-medium text-center w-[60px]">
-                    {index + 1}
+                    {pagination.pageIndex * pagination.pageSize + index + 1}
                   </TableCell>
 
                   {row.getVisibleCells().map((cell) => (
