@@ -389,9 +389,69 @@ function SimulateContent(): JSX.Element {
     }
 
   }, [developerType, schemeType, jangkaWaktu]);
-
-
-
+  const indonesianMonths = [
+    "Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"
+  ];
+  function formatDateIndo(s?: string): string {
+    if (!s) return "-";
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s as string;
+    const day = d.getDate();
+    const month = indonesianMonths[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  }
+  const preserveAcronyms = new Set(["BUMN","BUMD","TNI","POLRI","DKI","DIY"]);
+  function formatTitle(s?: string): string {
+    if (!s) return "-";
+    const parts = s.trim().split(/\s+/);
+    return parts.map(w => {
+      const up = w.toUpperCase();
+      if (preserveAcronyms.has(up)) return up;
+      const lw = w.toLowerCase();
+      return lw.charAt(0).toUpperCase() + lw.slice(1);
+    }).join(" ");
+  }
+  function formatGender(g?: string): string {
+    const t = (g || "").toUpperCase();
+    if (t === "MALE") return "Laki-Laki";
+    if (t === "FEMALE") return "Perempuan";
+    return g ?? "-";
+  }
+  function formatOccupation(s?: string): string {
+    if (!s) return "-";
+    const tokens = s.replace(/_/g, " ").split(" ");
+    return tokens.map(w => {
+      const up = w.toUpperCase();
+      if (preserveAcronyms.has(up)) return up;
+      const lw = w.toLowerCase();
+      return lw.charAt(0).toUpperCase() + lw.slice(1);
+    }).join(" ");
+  }
+  function formatYears(x?: number | string): string {
+    if (x === undefined || x === null) return "-";
+    const n = typeof x === "string" ? parseInt(x, 10) : x;
+    if (!Number.isFinite(n as number)) return "-";
+    return `${n} Tahun`;
+  }
+  function formatIDR(x?: number | string): string {
+    if (x === undefined || x === null || x === "") return "-";
+    const n = typeof x === "string" ? Number(x) : x;
+    if (!Number.isFinite(n as number)) return "-";
+    return `Rp ${Number(n).toLocaleString("id-ID")}`;
+  }
+  function formatPct(x?: number | string): string {
+    if (x === undefined || x === null || x === "") return "-";
+    const n = typeof x === "string" ? Number(x) : x;
+    if (!Number.isFinite(n as number)) return "-";
+    return `${Math.round(Number(n) * 100)}%`;
+  }
+  function formatDate(s?: string): string {
+    if (!s) return "-";
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s as string;
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  }
 
   return (
 
@@ -440,11 +500,7 @@ function SimulateContent(): JSX.Element {
           </div>
         )}
 
-        {isError && (
-          <div className="p-10 text-center text-red-500">
-            ❌ Data pengajuan tidak ditemukan
-          </div>
-        )}
+
         {/* Summary Cards */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-5 rounded-2xl shadow-sm border flex flex-col">
@@ -598,26 +654,26 @@ function SimulateContent(): JSX.Element {
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Tempat/Tgl Lahir</span>
                     <span className="font-medium text-right">
-                      {customer?.birthPlace ?? "-"}, {customer?.birthDate ?? "-"}
+                      {formatTitle(customer?.birthPlace)}, {formatDateIndo(customer?.birthDate)}
                     </span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Jenis Kelamin</span>
-                    <span className="font-medium text-right">{customer?.gender ?? "-"}</span>
+                    <span className="font-medium text-right">{formatGender(customer?.gender)}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Status</span>
-                    <span className="font-medium text-right">{customer?.maritalStatus ?? "-"}</span>
+                    <span className="font-medium text-right">{formatTitle(customer?.maritalStatus)}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Alamat</span>
                     <span className="font-medium text-right w-[55%] text-right">
-                      {customer?.address ?? "-"}, {customer?.city ?? "-"}
+                      {customer?.address ?? "-"}, {formatTitle(customer?.city)}
                     </span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Provinsi</span>
-                    <span className="font-medium text-right">{customer?.province ?? "-"}</span>
+                    <span className="font-medium text-right">{formatTitle(customer?.province)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Kode Pos</span>
@@ -634,7 +690,7 @@ function SimulateContent(): JSX.Element {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Pekerjaan</span>
-                    <span className="font-medium text-right">{customer?.occupation ?? "-"}</span>
+                    <span className="font-medium text-right">{formatOccupation(customer?.occupation)}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Pendapatan Bulanan</span>
@@ -652,12 +708,130 @@ function SimulateContent(): JSX.Element {
                       {customer?.companyAddress ?? "-"}
                     </span>
                   </div>
+                  <div className="flex justify-between border-b pb-1">
+                    <span className="text-muted-foreground">Kota Perusahaan</span>
+                    <span className="font-medium text-right">{formatTitle(customer?.companyCity)}</span>
+                  </div>
+                  <div className="flex justify-between border-b pb-1">
+                    <span className="text-muted-foreground">Provinsi Perusahaan</span>
+                    <span className="font-medium text-right">{formatTitle(customer?.companyProvince)}</span>
+                  </div>
+                  <div className="flex justify-between border-b pb-1">
+                    <span className="text-muted-foreground">Kode Pos Perusahaan</span>
+                    <span className="font-medium text-right">{customer?.companyPostalCode ?? "-"}</span>
+                  </div>
+                  <div className="flex justify-between border-b pb-1">
+                    <span className="text-muted-foreground">Kecamatan Perusahaan</span>
+                    <span className="font-medium text-right">{formatTitle(customer?.companyDistrict)}</span>
+                  </div>
+                  <div className="flex justify-between border-b pb-1">
+                    <span className="text-muted-foreground">Kelurahan Perusahaan</span>
+                    <span className="font-medium text-right">{formatTitle(customer?.companySubdistrict)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Pengalaman Kerja</span>
+                    <span className="font-medium text-right">{formatYears(customer?.workExperience)}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
         )}
+        {/* Data Pengajuan KPR & Data Properti */}
+        <section className="border rounded-2xl p-5 bg-white shadow-sm" style={{ borderColor: colors.gray + "33" }}>
+          <h2 className="font-semibold text-black text-lg mb-4 flex items-center gap-2">
+            <FileText className="h-6 w-6 text-[#3FD8D4]" /> Data Pengajuan KPR
+          </h2>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="border rounded-xl p-4 bg-card shadow-sm">
+              <h3 className="font-semibold text-base mb-3 text-gray-900">Data Pengajuan</h3>
+              <div className="space-y-2 text-sm">
+                {[
+                  ["Nilai Properti", formatIDR(property?.price)],
+                  ["Alamat Properti", property?.address ?? "-"],
+                  ["Jenis Sertifikat", property?.certificateType ?? "-"],
+                  ["Plafon (Loan Amount)", formatIDR(loanAmount)],
+                  [
+                    "Tenor",
+                    (() => {
+                      const lt = Number(pengajuan?.loanTermYears);
+                      if (!lt || Number.isNaN(lt)) return "-";
+                      return `${lt} tahun`;
+                    })(),
+                  ],
+                  ["Suku Bunga", pengajuan?.interestRate != null ? `${Number(pengajuan?.interestRate) * 100}%` : "-"],
+                  ["DP (Down Payment)", formatIDR(pengajuan?.downPayment)],
+                  [
+                    "Rasio LTV",
+                    (() => {
+                      const price = Number(property?.price);
+                      const loan = Number(loanAmount);
+                      if (!price || !loan || Number.isNaN(price) || Number.isNaN(loan)) return "-";
+                      return formatPct(loan / price);
+                    })(),
+                  ],
+                  ["Tujuan", formatOccupation(pengajuan?.purpose)],
+                  ["Diajukan", formatDate(pengajuan?.submittedAt ?? pengajuan?.tanggal)],
+                  ["Catatan", pengajuan?.notes ?? "-"],
+                ].map(([label, value]) => (
+                  <div key={label as string} className="flex justify-between border-b pb-1">
+                    <span className="text-muted-foreground">{label as string}</span>
+                    <span className="font-medium text-right max-w-[55%]">{value as string}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border rounded-xl p-4 bg-card shadow-sm">
+              <h3 className="font-semibold text-base mb-3 text-gray-900">Data Properti</h3>
+              {(() => {
+                const p: any = property;
+                if (!p) {
+                  return <p className="text-sm text-muted-foreground">Informasi properti tidak tersedia.</p>;
+                }
+                return (
+                  <div className="space-y-2 text-sm">
+                    {[
+                      ["Kode Properti", p.propertyCode ?? "-"],
+                      ["Judul", p.title ?? "-"],
+                      ["Deskripsi", p.description ?? "-"],
+                      ["Alamat", p.address ?? "-"],
+                      ["Kota", p.city ?? "-"],
+                      ["Provinsi", p.province ?? "-"],
+                      ["Kode Pos", p.postalCode ?? "-"],
+                      ["Kecamatan", p.district ?? "-"],
+                      ["Kelurahan", p.subDistrict ?? p.village ?? "-"],
+                      ["Luas Tanah", p.landArea != null ? `${p.landArea} m²` : "-"],
+                      ["Luas Bangunan", p.buildingArea != null ? `${p.buildingArea} m²` : "-"],
+                      ["Kamar Tidur", p.bedrooms ?? "-"],
+                      ["Kamar Mandi", p.bathrooms ?? "-"],
+                      ["Lantai", p.floors ?? "-"],
+                      ["Garasi", p.garage ?? "-"],
+                      ["Tahun Dibangun", p.yearBuilt ?? "-"],
+                      ["Harga", formatIDR(p.price)],
+                      ["Harga/m²", formatIDR(p.pricePerSqm)],
+                      ["Jenis Sertifikat", p.certificateType ?? "-"],
+                      ["Nomor Sertifikat", p.certificateNumber ?? "-"],
+                      ["PBB", formatIDR(p.pbbValue)],
+                    ].map(([label, value]) => (
+                      <div key={label as string} className="flex justify-between border-b pb-1">
+                        <span className="text-muted-foreground">{label as string}</span>
+                        <span className="font-medium text-right max-w-[55%]">{value as string}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </section>
+
+        {isError && (
+          <div className="p-10 text-center text-red-500">
+            ❌ Data pengajuan tidak ditemukan
+          </div>
+        )}
         {/* === Dokumen Pendukung === */}
         {customer && (
           <section className="border rounded-2xl p-5 bg-white shadow-sm">
