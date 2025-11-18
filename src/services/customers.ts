@@ -41,16 +41,36 @@ export type Customer = {
 
 export async function getAllUsers() {
   try {
-    const res = await coreApi.get("/admin/users", {
-    })
+    const direct = await coreApi.get("/admin/users/all")
+    const directPayload = direct.data
+    const directList = directPayload?.data?.data ?? directPayload?.data ?? directPayload ?? []
+    if (Array.isArray(directList) && directList.length >= 0) {
+      return directList
+    }
+  } catch {
+  }
 
-    console.log("➡️ STATUS:", res.status)
-    console.log("📦 HASIL API:", res.data)
-    // Beberapa endpoint mengembalikan bentuk berbeda:
-    // { data: { data: [] } } atau { data: [] }
-    const payload = res.data
-    const list = payload?.data?.data ?? payload?.data ?? []
-    return Array.isArray(list) ? list : []
+  try {
+    const pageSize = 200
+    let page = 0
+    const acc: unknown[] = []
+    while (true) {
+      const res = await coreApi.get(`/admin/users?page=${page}&size=${pageSize}`)
+      const payload = res.data
+      const list = payload?.data?.data ?? payload?.data ?? []
+      if (!Array.isArray(list) || list.length === 0) break
+      acc.push(...list)
+      if (list.length < pageSize) break
+      page += 1
+      if (page > 1000) break
+    }
+    const map: Record<string, unknown> = {}
+    for (const item of acc) {
+      const candidate = item as { id?: string | number; userId?: string | number }
+      const key = String((candidate.id ?? candidate.userId) ?? acc.length)
+      if (!map[key]) map[key] = item
+    }
+    return Object.values(map)
   } catch (error) {
     console.error("❌ Error fetching users:", error)
     return []
@@ -93,9 +113,10 @@ export async function updateCustomer(id: string | number, ui: Customer) {
     const raw = res.data?.data
     // Kembalikan versi UI agar langsung dipakai kembali di komponen
     return raw ? apiToUi(raw) : null
-  } catch (error: any) {
-    if (error.response) {
-      console.error("❌ Error updateCustomer:", error.response.data)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown } }
+    if (err.response) {
+      console.error("❌ Error updateCustomer:", err.response.data)
     } else {
       console.error("❌ Error updateCustomer:", error)
     }

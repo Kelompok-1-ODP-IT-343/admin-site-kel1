@@ -385,7 +385,7 @@ export default function DeveloperTable() {
                   >
                     {/* Kolom nomor urut */}
                     <TableCell className="py-3 px-4 text-sm font-medium text-center w-[60px]">
-                      {index + 1}
+                      {pagination.pageIndex * pagination.pageSize + index + 1}
                     </TableCell>
 
                     {row
