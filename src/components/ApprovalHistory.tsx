@@ -178,7 +178,7 @@ export default function ApprovalHistory() {
             case "DRAFT":
               return { text: "Draft", bgColor: "bg-gray-200 hover:bg-gray-300", textColor: "text-gray-900", dotColor: "bg-gray-700" }
             case "SUBMITTED":
-              return { text: "Submitted", bgColor: "bg-blue-200 hover:bg-blue-300", textColor: "text-blue-900", dotColor: "bg-blue-700" }
+              return { text: "Assigned", bgColor: "bg-blue-200 hover:bg-blue-300", textColor: "text-blue-900", dotColor: "bg-blue-700" }
             case "UNDER_REVIEW":
               return { text: "Under Review", bgColor: "bg-yellow-200 hover:bg-yellow-300", textColor: "text-yellow-900", dotColor: "bg-yellow-700" }
             case "APPROVED":

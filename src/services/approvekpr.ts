@@ -18,13 +18,12 @@ export type Pengajuan = {
 // 🔹 Ambil semua pengajuan dengan status SUBMITTED
 export async function getAllPengajuanByUser() {
   try {
-    const res = await coreApi.get("/kpr-applications/admin/all")
+    const res = await coreApi.get("/kpr-applications/admin/in-progress")
 
     const json = res.data
     const data: Pengajuan[] =
-      json.data?.filter((item: Pengajuan) => item.status === "SUBMITTED") || []
+      json.data?.data ?? json.data ?? []
 
-    console.log("📦 Pengajuan SUBMITTED:", data.length)
     return data
   } catch (error) {
     console.error("❌ Error fetching pengajuan (submitted):", error)
@@ -35,12 +34,12 @@ export async function getAllPengajuanByUser() {
 // 🔹 Ambil semua pengajuan dengan status selain SUBMITTED
 export async function getAllNonSubmittedPengajuan() {
   try {
-    const res = await coreApi.get("/kpr-applications/admin/all", {
+    const res = await coreApi.get("/kpr-applications/admin/history", {
     })
 
     const json = res.data
     const data: Pengajuan[] =
-      json.data?.filter((item: Pengajuan) => item.status !== "SUBMITTED") || []
+      json.data?.data ?? json.data ?? []
 
     console.log("📦 Pengajuan non-submitted:", data.length)
     return data
