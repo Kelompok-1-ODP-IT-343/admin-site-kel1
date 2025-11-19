@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const MIN_DESKTOP_WIDTH = 1024;
 
 export default function UnsupportedDevice() {
   const router = useRouter();
-  const search = useSearchParams();
-  const from = search.get("from") || "/login";
+  const [fromUrl, setFromUrl] = useState<string>("/login");
 
   useEffect(() => {
+    const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const f = params.get("from") || "/login";
+    setFromUrl(f);
+
     const maybeGoBack = () => {
       if (typeof window !== "undefined" && window.innerWidth >= MIN_DESKTOP_WIDTH) {
-        router.replace(from);
+        router.replace(f);
       }
     };
     // Cek saat mount dan ketika ukuran berubah
@@ -21,7 +24,7 @@ export default function UnsupportedDevice() {
     const onResize = () => maybeGoBack();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [router, from]);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#3FD8D4] via-white to-[#DDEE59] flex items-center justify-center p-4">
@@ -52,7 +55,7 @@ export default function UnsupportedDevice() {
             className="px-4 py-2 rounded-lg bg-[#111827] text-white hover:opacity-90"
             onClick={() => {
               if (typeof window !== "undefined" && window.innerWidth >= MIN_DESKTOP_WIDTH) {
-                router.replace(from);
+                router.replace(fromUrl);
               }
             }}
           >
@@ -60,7 +63,7 @@ export default function UnsupportedDevice() {
           </button>
           <a
             className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-            href={from}
+            href={fromUrl}
           >
             Buka tujuan setelah pindah ke desktop
           </a>
