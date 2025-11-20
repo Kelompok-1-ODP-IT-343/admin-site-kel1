@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginBlueprint, verifyOtpBlueprint } from '@/services/auth';
 import { Button } from '@/components/ui/button';
@@ -53,14 +53,36 @@ export default function LoginPage() {
   // state untuk OTP
   const [otp, setOtp] = useState("");
 
-  // fungsi submit OTP
-  const handleSubmitOtp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const lastSubmittedOtp = useRef<string | null>(null);
+
+  const playBeep = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.value = 0.05;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => {
+        osc.stop();
+        osc.disconnect();
+        gain.disconnect();
+        ctx.close();
+      }, 120);
+    } catch {}
+  };
+
+  const submitOtp = async (code: string) => {
+    if (!/^\d{6}$/.test(code) || loading) return;
     setError(null);
     setLoading(true);
-
+    lastSubmittedOtp.current = code;
+    playBeep();
     try {
-      const result = await verifyOtpBlueprint({ identifier, otp });
+      const result = await verifyOtpBlueprint({ identifier, otp: code });
       if (result.success) {
         router.push("/dashboard");
       } else {
@@ -69,6 +91,25 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const numeric = otp.replace(/\D/g, "");
+    if (numeric !== otp) setOtp(numeric);
+    if (/^\d{6}$/.test(numeric) && !loading && numeric !== lastSubmittedOtp.current) {
+      void submitOtp(numeric);
+    }
+  }, [otp, loading]);
+
+  useEffect(() => {
+    lastSubmittedOtp.current = null;
+    setError(null);
+  }, [step]);
+
+  // fungsi submit OTP
+  const handleSubmitOtp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await submitOtp(otp);
   };
 
 
@@ -167,7 +208,7 @@ export default function LoginPage() {
                       <InputOTP
                         maxLength={6}
                         value={otp}
-                        onChange={setOtp}
+                        onChange={(v) => setOtp(v.replace(/\D/g, ""))}
                       >
                         <InputOTPGroup>
                           {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -195,13 +236,24 @@ export default function LoginPage() {
                     </div>
                   )}
 
-                  <Button
-                    type="submit"
-                    disabled={loading || otp.length < 6}
-                    className="w-2/3 bg-[#3FD8D4] hover:bg-[#2BB8B4] text-white font-semibold"
-                  >
-                    {loading ? "Verifying..." : "Submit"}
-                  </Button>
+                  <AnimatePresence>
+                    {loading && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center gap-2 text-gray-600"
+                      >
+                        <svg className="animate-spin h-5 w-5 text-[#3FD8D4]" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Verifying...
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  
                   <Button
                     variant="ghost"
                     type="button"
