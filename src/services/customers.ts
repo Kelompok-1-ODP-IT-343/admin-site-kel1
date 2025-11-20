@@ -108,11 +108,36 @@ export async function getCustomerById(id: string | number) {
 // 🔹 Update customer (PUT /admin/users/{id})
 export async function updateCustomer(id: string | number, ui: Customer) {
   try {
-    const payload = uiToApi(ui)
+    const mapped = uiToApi(ui)
+    const allow = [
+      "fullName",
+      "username",
+      "email",
+      "phone",
+      "birthDate",
+      "birthPlace",
+      "gender",
+      "maritalStatus",
+      "address",
+      "city",
+      "province",
+      "postalCode",
+      "occupation",
+      "companyName",
+      "monthlyIncome",
+    ]
+    const payload: Record<string, any> = {}
+    for (const k of allow) {
+      const v = (mapped as any)[k]
+      if (v === undefined || v === null) continue
+      const t = typeof v === "string" ? v.trim() : v
+      if (t === "" || t === "-") continue
+      payload[k] = v
+    }
     const res = await coreApi.put(`/admin/users/${id}`, payload)
-    const raw = res.data?.data
+    const updatedRaw = res.data?.data
     // Kembalikan versi UI agar langsung dipakai kembali di komponen
-    return raw ? apiToUi(raw) : null
+    return updatedRaw ? apiToUi(updatedRaw) : null
   } catch (error: unknown) {
     const err = error as { response?: { data?: unknown } }
     if (err.response) {

@@ -1,6 +1,6 @@
 import axios, { AxiosHeaders } from "axios";
 // const BASE_URL = "http://local-dev.satuatap.my.id/api/v1";
-const BASE_URL = "https://satuatap.my.id/api/v1";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://satuatap.my.id";
 // const BASE_URL = "http://localhost:18080/api/v1";
 
 let isRefreshing = false;
