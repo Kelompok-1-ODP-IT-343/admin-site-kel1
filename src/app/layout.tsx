@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider" 
-import { Toaster } from "@/components/ui/sonner" 
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+import DeviceGuard from "@/components/DeviceGuard"
 
 // Font setup
 const geist = Geist({
@@ -37,8 +38,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          {/* Guard untuk akses desktop-only dengan auto deteksi */}
+          <DeviceGuard />
           {children}
-          <Toaster richColors position="top-right" /> 
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
     </html>

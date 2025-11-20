@@ -6,14 +6,14 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://satuatap.my.id";
 let isRefreshing = false;
 let failedQueue: any[] = [];
 // Helper function to get token from cookies
-const getTokenFromCookie = (name:string): string | null => {
+const getTokenFromCookie = (name: string): string | null => {
   if (typeof window === "undefined") return null;
-  
+
   const token = document.cookie
     .split("; ")
     .find((row) => row.startsWith(`${name}=`))
     ?.split("=")[1];
-  
+
   return token || null;
 };
 
@@ -45,9 +45,14 @@ coreApi.interceptors.request.use((config) => {
   try {
     const isForm = (() => {
       if (!config || !config.data) return false;
-      if (typeof FormData !== "undefined" && config.data instanceof FormData) return true;
+      if (typeof FormData !== "undefined" && config.data instanceof FormData)
+        return true;
       const tag = Object.prototype.toString.call(config.data);
-      return tag === "[object FormData]" || (typeof (config.data as any)?.append === "function" && (config.data as any)?.[Symbol.toStringTag] === "FormData");
+      return (
+        tag === "[object FormData]" ||
+        (typeof (config.data as any)?.append === "function" &&
+          (config.data as any)?.[Symbol.toStringTag] === "FormData")
+      );
     })();
     if (isForm) {
       if (config.headers instanceof AxiosHeaders) {
@@ -58,13 +63,16 @@ coreApi.interceptors.request.use((config) => {
       }
     } else {
       const method = (config.method || "").toUpperCase();
-      const needsJson = method === "POST" || method === "PUT" || method === "PATCH";
+      const needsJson =
+        method === "POST" || method === "PUT" || method === "PATCH";
       if (needsJson) {
         if (config.headers instanceof AxiosHeaders) {
-          if (!config.headers.get("Content-Type")) config.headers.set("Content-Type", "application/json");
+          if (!config.headers.get("Content-Type"))
+            config.headers.set("Content-Type", "application/json");
         } else {
           config.headers = new AxiosHeaders(config.headers as any);
-          if (!config.headers.get("Content-Type")) config.headers.set("Content-Type", "application/json");
+          if (!config.headers.get("Content-Type"))
+            config.headers.set("Content-Type", "application/json");
         }
       }
     }
@@ -118,7 +126,7 @@ coreApi.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      try { 
+      try {
         const refreshToken = getTokenFromCookie("refreshToken");
         if (!refreshToken) throw new Error("No refresh token");
 
@@ -127,7 +135,10 @@ coreApi.interceptors.response.use(
 
         const payload = res?.data?.data ?? res?.data;
         const newToken =
-          payload?.token || payload?.accessToken || payload?.access_token || null;
+          payload?.token ||
+          payload?.accessToken ||
+          payload?.access_token ||
+          null;
         const newRefresh =
           payload?.refreshToken || payload?.refresh_token || null;
 
@@ -156,29 +167,32 @@ coreApi.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-export async function uploadFetch(path: string, formData: FormData, init?: RequestInit) {
-  const token = getTokenFromCookie("token")
-  const headers: Record<string, string> = {}
-  if (token) headers["Authorization"] = `Bearer ${token}`
+export async function uploadFetch(
+  path: string,
+  formData: FormData,
+  init?: RequestInit
+) {
+  const token = getTokenFromCookie("token");
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
     body: formData,
     headers,
     ...init,
-  })
-  const text = await res.text()
-  let data: any = null
+  });
+  const text = await res.text();
+  let data: any = null;
   try {
-    data = text ? JSON.parse(text) : null
+    data = text ? JSON.parse(text) : null;
   } catch {
-    data = null
+    data = null;
   }
   if (!res.ok) {
-    const message = (data && (data.message || data.error)) || text || `HTTP ${res.status}`
-    throw new Error(message)
+    const message =
+      (data && (data.message || data.error)) || text || `HTTP ${res.status}`;
+    throw new Error(message);
   }
-  return data ?? text
+  return data ?? text;
 }
 export default coreApi;
-
-
