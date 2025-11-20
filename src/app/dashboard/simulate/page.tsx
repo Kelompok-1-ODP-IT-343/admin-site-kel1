@@ -66,6 +66,25 @@ function SimulateContent(): JSX.Element {
 
         console.log("✅ Data pengajuan:", safeData);
         setPengajuan(safeData);
+        // Fetch credit score once after we have pengajuan detail
+        try {
+          const uid = (safeData?.userInfo?.id as any) ?? idNum
+          if (uid) {
+            setCreditLoading(true)
+            setCreditError(null)
+            const cs = await getCreditScore(uid)
+            if (cs && typeof cs.score === "number") {
+              setCreditScore(Math.round(cs.score))
+            } else {
+              setCreditError("Score tidak tersedia")
+            }
+          }
+        } catch (err) {
+          console.error("Gagal mengambil credit score:", err)
+          setCreditError("Gagal mengambil credit score")
+        } finally {
+          setCreditLoading(false)
+        }
       } catch (err) {
         console.error("❌ Gagal fetch pengajuan:", err);
         setPengajuan(null);
@@ -104,24 +123,6 @@ function SimulateContent(): JSX.Element {
   const [creditScore, setCreditScore] = useState<number | null>(null)
   const [creditLoading, setCreditLoading] = useState(false)
   const [creditError, setCreditError] = useState<string | null>(null)
-
-  useEffect(() => {
-    // ambil user id dari pengajuan.userInfo kalau tersedia, fallback ke id aplikasi
-    const uid = (pengajuan?.userInfo?.id as any) ?? idNum
-    if (!uid) return
-    setCreditLoading(true)
-    setCreditError(null)
-    getCreditScore(uid)
-      .then((res) => {
-        if (res && typeof res.score === "number") {
-          setCreditScore(Math.round(res.score))
-        } else {
-          setCreditError("Score tidak tersedia")
-        }
-      })
-      .catch(() => setCreditError("Gagal mengambil credit score"))
-      .finally(() => setCreditLoading(false))
-  }, [pengajuan, idNum])
 
   const score = creditScore ?? fallbackScore
 
