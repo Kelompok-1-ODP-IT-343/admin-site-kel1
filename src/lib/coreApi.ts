@@ -1,6 +1,6 @@
 import axios, { AxiosHeaders } from "axios";
 // const BASE_URL = "http://local-dev.satuatap.my.id/api/v1";
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL = "https://satuatap.my.id/api/v1";
 // const BASE_URL = "http://localhost:18080/api/v1";
 
 let isRefreshing = false;
@@ -22,8 +22,6 @@ const setCookie = (name: string, value: string, maxAge: number) => {
 
 // Axios instance untuk seluruh request ke API Satu Atap
 const coreApi = axios.create({
-  // baseURL: "https://admin.satuatap.my.id/api/v1",
-  // baseURL: "http://localhost:18080/api/v1",
   baseURL: BASE_URL,
   timeout: 1500000,
   headers: {
@@ -33,9 +31,7 @@ const coreApi = axios.create({
 
 // Klien terpisah untuk refresh token agar tidak terpengaruh interceptor
 const refreshClient = axios.create({
-  // baseURL: "http://localhost:18080/api/v1",
   baseURL: BASE_URL,
-  // baseURL: "https://satuatap.my.id/api/v1",
   headers: { Accept: "application/json" },
 });
 
