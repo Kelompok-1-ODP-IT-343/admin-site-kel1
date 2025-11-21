@@ -29,7 +29,7 @@ export default function AssignApprovalDialog() {
         const data = await getPengajuanDetail(applicationId);
         const name = data?.developerName ?? data?.developerInfo?.companyName ?? "-";
         setDeveloperName(name);
-      } catch (e) {
+      } catch {
         setDeveloperName("-");
       } finally {
         setLoadingDev(false);
@@ -45,7 +45,7 @@ export default function AssignApprovalDialog() {
       try {
         const list = await getApprovers();
         setApprovers(list);
-      } catch (e) {
+      } catch {
         setApprovers([]);
       } finally {
         setLoadingApprovers(false);
@@ -53,6 +53,8 @@ export default function AssignApprovalDialog() {
     };
     fetchApprovers();
   }, []);
+
+  const approversForThird = approvers.filter((a) => String(a.id) !== verifikator2);
 
   const handleSubmit = async () => {
     const applicationId = Number(searchParams.get("id"));
@@ -76,8 +78,17 @@ export default function AssignApprovalDialog() {
       toast.success(res.message || "Assign berhasil ✅");
       // Redirect ke dashboard setelah toast sukses
       router.push("/dashboard");
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "Gagal assign admin ❌";
+    } catch (err: unknown) {
+      let msg = "Gagal assign admin ❌";
+      if (typeof err === "object" && err !== null) {
+        const response = (err as { response?: { data?: { message?: unknown } } }).response;
+        const maybeMsg = response?.data?.message;
+        if (typeof maybeMsg === "string") {
+          msg = maybeMsg;
+        } else if (typeof (err as { message?: unknown }).message === "string") {
+          msg = (err as { message?: string }).message as string;
+        }
+      }
       toast.error(String(msg));
     } finally {
       setSubmitting(false);
@@ -121,7 +132,11 @@ export default function AssignApprovalDialog() {
             <label className="text-xs font-medium text-gray-600">Verifikator:</label>
             <select
               value={verifikator2}
-              onChange={(e) => setVerifikator2(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setVerifikator2(v);
+                if (verifikator3 === v) setVerifikator3("");
+              }}
               className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-white"
             >
               <option value="">{loadingApprovers ? "Memuat approver..." : "-- Pilih Approver --"}</option>
@@ -143,7 +158,7 @@ export default function AssignApprovalDialog() {
               className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-white"
             >
               <option value="">{loadingApprovers ? "Memuat approver..." : "-- Pilih Approver --"}</option>
-              {approvers.map((a) => (
+              {approversForThird.map((a) => (
                 <option key={a.id} value={String(a.id)}>
                   {a.fullName}
                 </option>
