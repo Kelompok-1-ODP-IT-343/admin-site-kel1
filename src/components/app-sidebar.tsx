@@ -74,6 +74,18 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
   const router = useRouter()
   const [user, setUser] = useState<any>(null);
 
+  const handleLogout = () => {
+    try {
+      document.cookie = "token=; Max-Age=0; path=/";
+      document.cookie = "refreshToken=; Max-Age=0; path=/";
+    } finally {
+      if (typeof onLogout === "function") {
+        try { onLogout(); } catch {}
+      }
+      router.push("/login");
+    }
+  }
+
   useEffect(() => {
     const fetchProfile = async () => {
       const data = await getUserProfile();
@@ -194,7 +206,7 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
 
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={onLogout}
+              onClick={handleLogout}
               className="text-red-500 focus:text-red-500"
             >
               <LogOut className="mr-2 h-4 w-4" /> Log out
@@ -312,7 +324,7 @@ export function AppSidebar({ activeMenu, onSelect, onLogout }: any) {
 
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={onLogout}
+              onClick={handleLogout}
               className="text-red-500 focus:text-red-500"
             >
               <LogOut className="mr-2 h-4 w-4" /> Log out

@@ -15,6 +15,7 @@ import { customers } from "@/components/data/approvekpr"
 import { getPengajuanDetail } from "@/services/approvekpr"
 import { getCreditScore } from "@/services/creditScore"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import AssignApprovalDialog from "@/components/dialogs/AssignTo";
 // import jsPDF from "jspdf"
 // import html2canvas from "html2canvas"
@@ -531,62 +532,60 @@ function SimulateContent(): JSX.Element {
               <p className="text-xs font-medium">FICO® Score</p>
             </div>
 
-            {/* === Gauge tetap center === */}
-            <div className="flex justify-center">
-              <div className="relative w-40 h-20">
-                <svg viewBox="0 0 100 50" className="w-full h-full">
-                  {/* Background arc */}
-                  <path
-                    d="M10 50 A40 40 0 0 1 90 50"
-                    fill="none"
-                    stroke="#E5E7EB"
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                  />
-                  {/* Colored arc */}
-                  <path
-                    d="M10 50 A40 40 0 0 1 90 50"
-                    fill="none"
-                    stroke={
-                      score <= 560 ? "#EF4444" :
-                      score <= 650 ? "#F97316" :
-                      score <= 700 ? "#EAB308" :
-                      score <= 750 ? "#3B82F6" :
-                      "#22C55E"
-                    }
-                    strokeWidth="8"
-                    strokeDasharray={`${((score - 300) / 550) * 126} 126`}
-                    strokeLinecap="round"
-                  />
-
-                  {/* Text inside gauge */}
-                  <text
-                    x="50"
-                    y="32"
-                    textAnchor="middle"
-                    fontSize="14"
-                    fontWeight="800"
-                    fill="#111827"
-                  >
-                    {score}
-                  </text>
-                  <text
-                    x="50"
-                    y="44"
-                    textAnchor="middle"
-                    fontSize="7"
-                    fontWeight="600"
-                    fill={
-                      score <= 560 ? "#dc2626" :
-                      score <= 650 ? "#ea580c" :
-                      score <= 700 ? "#ca8a04" :
-                      score <= 750 ? "#2563eb" :
-                      "#16a34a"
-                    }
-                  >
-                    {creditLoading
-                      ? "Loading"
-                      : score <= 560
+            {creditLoading ? (
+              <div className="flex justify-center">
+                <Skeleton className="w-40 h-20 rounded-xl" />
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <div className="relative w-40 h-20">
+                  <svg viewBox="0 0 100 50" className="w-full h-full">
+                    <path
+                      d="M10 50 A40 40 0 0 1 90 50"
+                      fill="none"
+                      stroke="#E5E7EB"
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M10 50 A40 40 0 0 1 90 50"
+                      fill="none"
+                      stroke={
+                        score <= 560 ? "#EF4444" :
+                        score <= 650 ? "#F97316" :
+                        score <= 700 ? "#EAB308" :
+                        score <= 750 ? "#3B82F6" :
+                        "#22C55E"
+                      }
+                      strokeWidth="8"
+                      strokeDasharray={`${((score - 300) / 550) * 126} 126`}
+                      strokeLinecap="round"
+                    />
+                    <text
+                      x="50"
+                      y="32"
+                      textAnchor="middle"
+                      fontSize="14"
+                      fontWeight="800"
+                      fill="#111827"
+                    >
+                      {score}
+                    </text>
+                    <text
+                      x="50"
+                      y="44"
+                      textAnchor="middle"
+                      fontSize="7"
+                      fontWeight="600"
+                      fill={
+                        score <= 560 ? "#dc2626" :
+                        score <= 650 ? "#ea580c" :
+                        score <= 700 ? "#ca8a04" :
+                        score <= 750 ? "#2563eb" :
+                        "#16a34a"
+                      }
+                    >
+                      {score <= 560
                         ? "Very Bad"
                         : score <= 650
                           ? "Bad"
@@ -595,10 +594,11 @@ function SimulateContent(): JSX.Element {
                             : score <= 750
                               ? "Good"
                               : "Excellent"}
-                  </text>
-                </svg>
+                    </text>
+                  </svg>
+                </div>
               </div>
-            </div>
+            )}
             {creditError && (
               <p className="mt-2 text-xs text-red-600">{creditError}</p>
             )}
