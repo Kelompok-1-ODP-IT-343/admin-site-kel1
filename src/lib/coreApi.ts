@@ -8,7 +8,6 @@ let failedQueue: any[] = [];
 // Helper function to get token from cookies
 const getTokenFromCookie = (name: string): string | null => {
   if (typeof window === "undefined") return null;
-
   const token = document.cookie
     .split("; ")
     .find((row) => row.startsWith(`${name}=`))
