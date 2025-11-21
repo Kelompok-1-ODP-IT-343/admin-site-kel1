@@ -443,7 +443,7 @@ export default function ViewPropertyDialog({
                         </Select>
                       ) : (
                         <Input
-                          value={(editedData as any)[key]}
+                          value={key === "price_per_sqm" ? ((editedData as any).price_per_sqm ?? (editedData as any).pricePerSqm ?? "") : (editedData as any)[key]}
                           onChange={(e) => handleChange(key, e.target.value)}
                           inputMode={key === "price" || key === "price_per_sqm" ? "numeric" : undefined}
                           pattern={key === "price" || key === "price_per_sqm" ? "[0-9]*" : undefined}
@@ -459,11 +459,13 @@ export default function ViewPropertyDialog({
                             || "-"
                           return <span className="text-right w-[55%] truncate font-medium">{name}</span>
                         }
-                        const raw = (editedData as any)[key]
+                        const raw = key === "price_per_sqm"
+                          ? ((editedData as any).price_per_sqm ?? (editedData as any).pricePerSqm)
+                          : (editedData as any)[key]
                         const isPrice = key.includes("price")
                         const formatted = isPrice
                           ? `Rp${Number(raw ?? 0).toLocaleString("id-ID")}`
-                          : raw ?? "-"
+                          : (raw ?? "-")
                         return <span className="text-right w-[55%] truncate">{formatted}</span>
                       })()
                     )}
@@ -493,6 +495,10 @@ export default function ViewPropertyDialog({
                     const value =
                       key === "latitude_longitude"
                         ? `${(editedData as any).latitude}, ${(editedData as any).longitude}`
+                        : key === "land_area"
+                        ? ((editedData as any).land_area ?? (editedData as any).landArea)
+                        : key === "building_area"
+                        ? ((editedData as any).building_area ?? (editedData as any).buildingArea)
                         : (editedData as any)[key];
 
                     const displayValue =
