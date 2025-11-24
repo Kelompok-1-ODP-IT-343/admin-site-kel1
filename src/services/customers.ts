@@ -37,6 +37,7 @@ export type Customer = {
   company_city: string
   company_province: string
   monthly_income: string
+  work_experience?: string | number
 }
 
 export async function getAllUsers() {
@@ -125,6 +126,7 @@ export async function updateCustomer(id: string | number, ui: Customer) {
       "occupation",
       "companyName",
       "monthlyIncome",
+      "workExperience",
     ]
     const payload: Record<string, any> = {}
     for (const k of allow) {

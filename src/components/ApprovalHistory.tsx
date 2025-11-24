@@ -181,6 +181,8 @@ export default function ApprovalHistory() {
               return { text: "Assigned", bgColor: "bg-blue-200 hover:bg-blue-300", textColor: "text-blue-900", dotColor: "bg-blue-700" }
             case "UNDER_REVIEW":
               return { text: "Under Review", bgColor: "bg-yellow-200 hover:bg-yellow-300", textColor: "text-yellow-900", dotColor: "bg-yellow-700" }
+            case "FINAL_APPROVAL":
+              return { text: "Final Approval", bgColor: "bg-slate-200 hover:bg-slate-300", textColor: "text-slate-900", dotColor: "bg-slate-700" }
             case "APPROVED":
             case "APPROVE":
               return { text: "Approved", bgColor: "bg-green-200 hover:bg-green-300", textColor: "text-green-900", dotColor: "bg-green-700" }

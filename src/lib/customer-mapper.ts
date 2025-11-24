@@ -29,14 +29,15 @@ export function apiToUi(api: any): Customer {
 
     // --- Data Pekerjaan ---
     occupation: api.occupation ?? "-",
-    company_postal_code: "-", // ❌ belum ada
-    company_name: api.companyName ?? "-",
-    company_address: "-", // ❌ belum ada
-    company_district: "-", // ❌ belum ada
-    company_subdistrict: "-", // ❌ belum ada
-    company_city: "-", // ❌ belum ada
-    company_province: "-", // ❌ belum ada
-    monthly_income: String(api.monthlyIncome ?? "0"),
+    company_postal_code: api.companyPostalCode ?? api.company_postal_code ?? "-",
+    company_name: api.companyName ?? api.company_name ?? "-",
+    company_address: api.companyAddress ?? api.company_address ?? "-",
+    company_district: api.companyDistrict ?? api.company_district ?? "-",
+    company_subdistrict: api.companySubdistrict ?? api.company_subdistrict ?? "-",
+    company_city: api.companyCity ?? api.company_city ?? "-",
+    company_province: api.companyProvince ?? api.company_province ?? "-",
+    monthly_income: String(api.monthlyIncome ?? api.monthly_income ?? "0"),
+    work_experience: api.workExperience ?? api.work_experience ?? "-",
   }
 }
 
@@ -60,5 +61,6 @@ export function uiToApi(ui: Customer) {
     occupation: ui.occupation,
     companyName: ui.company_name,
     monthlyIncome: ui.monthly_income,
+    workExperience: (ui as any).work_experience,
   }
 }

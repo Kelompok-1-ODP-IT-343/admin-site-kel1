@@ -139,12 +139,12 @@ export default function ApprovalTable() {
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter emails..."
+          placeholder="Cari berdasarkan nama..."
           className="max-w-sm"
           onChange={(e) => {
             const value = e.target.value.toLowerCase()
             const filtered = data.filter((item) =>
-              (item.applicantEmail || "").toLowerCase().includes(value)
+              (item.applicantName || "").toLowerCase().includes(value)
             )
             table.options.data = filtered.length ? filtered : data
           }}
