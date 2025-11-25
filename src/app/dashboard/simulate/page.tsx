@@ -111,8 +111,8 @@ function SimulateContent(): JSX.Element {
   // const customer = pengajuan?.userInfo
   // const property = pengajuan?.propertyInfo
   // const documents = pengajuan?.documents || []
-  const ktp = documents.find((d: any) => d.documentType === "KTP")?.filePath
-  const slip = documents.find((d: any) => d.documentType === "SLIP_GAJI")?.filePath
+  const ktp = (documents.find((d: any) => d.documentType === "KTP")?.filePath ?? "").trim()
+  const slip = (documents.find((d: any) => d.documentType === "SLIP_GAJI")?.filePath ?? "").trim()
   
   // --- FICO score integration ---
   const idNum = parseInt(id ?? "1", 10)

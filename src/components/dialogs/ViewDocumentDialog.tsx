@@ -16,6 +16,7 @@ export default function ViewDocumentDialog({
   title: string;
   imageUrl: string | null;
 }) {
+  const src = (imageUrl ?? "").trim()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
@@ -30,9 +31,9 @@ export default function ViewDocumentDialog({
         >
             <DialogHeader className="p-4 border-b flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
-            {imageUrl && (
+            {src && (
                 <a
-                href={imageUrl}
+                href={src}
                 download
                 className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#0B63E5]/50 text-[#0B63E5] hover:bg-[#0B63E5]/10 text-sm font-medium transition"
                 >
@@ -42,14 +43,15 @@ export default function ViewDocumentDialog({
             )}
             </DialogHeader>
 
-            {imageUrl ? (
+            {src ? (
             <div className="p-4 flex justify-center bg-gray-50">
                 <Image
-                src={imageUrl}
+                src={src}
                 alt={title}
                 width={700}
                 height={500}
                 className="rounded-lg object-contain max-h-[75vh]"
+                unoptimized
                 />
             </div>
             ) : (
